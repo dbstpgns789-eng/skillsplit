@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# datasets and run outputs are never committed
+data/raw/
+runs/
+*.tar
+*.tar.gz
+*.zip
+*.db
+*.sqlite

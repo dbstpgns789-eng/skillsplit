@@ -1,0 +1,11 @@
+# core
+pyyaml>=6.0
+numpy>=1.26
+scikit-learn>=1.4
+openai>=1.40
+pytest>=8.0
+# data download helpers (only needed to rebuild data/raw)
+datasets>=3.0
+huggingface_hub>=0.25
+# optional: structural shell parsing for stage 1 (--use-ast)
+# tree-sitter>=0.26 ; tree-sitter-bash>=0.25
