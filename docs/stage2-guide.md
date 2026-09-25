@@ -206,7 +206,7 @@ manifest 기준 (gpt-5.4-mini, 같은 계산식에 N만 바꾼다. `USD = N × (
 
 ### 권장 모델 순서 (R2 C5)
 
-1. **gpt-5.4-mini** ($0.75 / $4.50, R2 조회 기준). **주의(2026-09-26):** OpenAI 가격 페이지의 현재 목록(Flagship: gpt-6-astra $10/$50, gpt-6-sol $2/$10, gpt-6-luna $0.10/$0.50; Cyber: gpt-5.6-sol $4/$20)에 gpt-5.4-mini가 보이지 않는다. 레거시 섹션에서 아직 제공되는지 확인한 뒤 쓴다. 비교 목적이 아니라면 gpt-6-luna가 가장 싸다(9,740건 1회 약 $3.55 = 2,900×0.10 + 150×0.50 토큰 기준). SkillGate의 기본 모델(논문 "default: gpt-5.4-mini", `config/settings.py`의 `llm_model` 기본값. 단 `llm.py`의 `LLMConfig.model` dataclass 기본값은 `"gpt-4o-mini"`이며 settings가 이를 덮어쓴다)이고 MalSkillBench의 Cisco Skill Scanner (LLM)도 이 모델이라 비교 가능하다. 9,740 × 3회 = $83 (Batch $42).
+1. **gpt-5.4-mini** ($0.75 / $4.50, 2026-09-26 OpenAI 가격 페이지 레거시 목록에서 확인). 현재 플래그십은 gpt-6 계열(gpt-6-luna $0.10/$0.50이 가장 싸고 9,740건 1회 약 $3.55)이지만, SkillGate·MalSkillBench와 같은 조건으로 비교하려면 gpt-5.4-mini를 쓴다. SkillGate의 기본 모델(논문 "default: gpt-5.4-mini", `config/settings.py`의 `llm_model` 기본값. 단 `llm.py`의 `LLMConfig.model` dataclass 기본값은 `"gpt-4o-mini"`이며 settings가 이를 덮어쓴다)이고 MalSkillBench의 Cisco Skill Scanner (LLM)도 이 모델이라 비교 가능하다. 9,740 × 3회 = $83 (Batch $42).
 2. **Claude Haiku 4.5** ($1 / $5). MalSkillBench의 Sentry Skill Scanner (full)가 `claude-haiku-4-5-20251001`로 F1 88.6%를 냈다 (https://arxiv.org/html/2606.07131 Table 5 [요약경유]). 9,740 × 3회 = $107 (Batch $53).
 3. 저가 sanity check용 gpt-5-nano 또는 Gemini 2.5 Flash-Lite (3회 $6~10). 파이프라인과 프롬프트 디버깅에만 쓰고 최종 수치에는 쓰지 않는다.
 
