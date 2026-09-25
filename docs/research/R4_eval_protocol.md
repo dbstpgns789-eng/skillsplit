@@ -1,3 +1,5 @@
+> **정정 (2026-09-26):** 이 보고서의 "MaliciousSkillBench에는 범주별 재현율이 없다"는 판정은 틀렸다. 논문 부록 J.4(Figure 6)가 스캐너 3종의 공격 범주별 재현율을 보고한다(SkillFortify Credential Access 81.5% 등). 부록 J 전문은 `wiki/sources.md`에 정리. "roughly 21 MB input"(J.3, Table 47)도 확인됨.
+
 # R4. 평가 프로토콜 비교 조사: 공개 벤치마크와 우리 결과를 나란히 놓기 위한 규약
 
 작성일 2026-09-25. 조사 범위: MaliciousSkillBench, MalSkillBench, SkillGate/SkillsBench-1650, SkillVetBench(+companion). 영어 원문은 그대로 인용하고(따옴표 안은 원문 그대로), 수치는 원문 또는 저장소 파일에서 직접 확인한 것만 적는다. 저장소 파일은 `gh api repos/<o>/<r>/contents/<path>`로, 논문은 arXiv HTML을 내려받아 확인했다. 내가 직접 계산한 수치는 `[계산]`으로 표시한다.

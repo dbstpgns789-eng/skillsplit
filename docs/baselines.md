@@ -205,3 +205,15 @@ SkillSpector의 첫 200건 실행(배치 200)은 32건 예산 때문에 168건�
 - Snyk agent-scan https://github.com/snyk/agent-scan (README "Quick start", 대량 스캔 문구)
 - SkillTrustBench (스모크 데이터) `data/raw/SkillTrustBench/benchmark_full_v1.0/ground_truth.json`
 - 조사 원문: 스크래치패드 `research/R3_baselines.md`(설치·출력 실측), `research/R4_eval_protocol.md`(프로토콜 비교)
+
+## 추가 (2026-09-26): 논문 부록 J의 전체 벤치마크 수치
+
+우리 기준선 결과를 옆에 놓을 숫자다(원문 확인, `wiki/sources.md`). 조건은 SKILL.md 단일 사본, 사전 등록 게이트, 논문의 고정 환경(Cisco 커밋 48f59347, yara-x 1.4.0).
+
+| 스캐너 | 전체 9,740 재현율 / FPR / Macro-F1 (Table 43) | Source-Disjoint 재현율 / FPR / Macro-F1 (Table 44) |
+|---|---|---|
+| Cisco-local-behavioral | .064 / .008 / .254 | .025 / .011 / .308 |
+| SkillFortify-offline | .566 / .451 / .516 | .253 / .499 / .349 |
+| SkillSpector-static | .033 / .002 / .222 | .000 / .006 / .281 |
+
+부록 J.4는 공격 범주별 재현율도 보고한다(Figure 6). 우리가 앞서 "없다"고 적은 것은 틀렸다. 논문 스스로 "Differences are descriptive and may reflect source composition as well as scanner behavior"라고 한정한다.

@@ -68,7 +68,7 @@ MaliciousSkillBench에는 논문이 고정해 둔 분할(`random`, `source_disjo
 ## 6. 알아 둘 것
 
 - **Windows 파일 이름.** MalSkillBench 스킬 폴더 20여 개는 이름에 `:`가 들어 있어 Windows에서 만들 수 없다. `data/build_manifest.py`와 압축 해제 스크립트는 `:*?"<>|`를 `_`로 바꾼다. 원본 이름은 `_source_inventory.txt`에 있다.
-- **21 MB 스킬.** MaliciousSkillBench에 SKILL.md가 21 MB인 샘플이 하나 있다(`ASB04_002434`, MalSkillBench 유래). 같은 파일이 MalSkillBench에는 `msb:klaviyoapi`(wild)로 들어 있다. MaliciousSkillBench 논문이 "roughly 21 MB input"을 따로 언급한다(부록 J). 1단계는 2 MB 넘는 파일을 건너뛰고 `oversize`로 기록하고, 2단계는 앞 8,000자 + 뒤 4,000자만 넣는다.
+- **21 MB 스킬.** MaliciousSkillBench에 SKILL.md가 21 MB인 샘플이 하나 있다(`ASB04_002434`, MalSkillBench 유래). 같은 파일이 MalSkillBench에는 `msb:klaviyoapi`(wild)로 들어 있다. MaliciousSkillBench 논문 부록 J.3이 이 파일을 Cisco 스캐너가 결과를 내지 못한 사례로 기록한다(Table 47: "no result (21 MB input)", 원문 "one roughly 21 MB input for which no result is produced"). 2026-09-26 원문 확인. 1단계는 2 MB 넘는 파일을 건너뛰고 `oversize`로 기록하고, 2단계는 앞 8,000자 + 뒤 4,000자만 넣는다.
 - **재배포 금지.** `data/raw/`는 git에 올리지 않는다. 우리가 공개할 수 있는 것은 manifest(ID와 라벨), 예측 파일, 스크립트다. MaliciousSkillBench 문서 원문: 스킬 본문은 "retain their respective upstream terms".
 - **스크립트 유무 편향.** 정상과 악성의 스크립트 보유율이 벤치마크마다 다르다. MalSkillBench 정상 19%(762/4,000) 대 악성 43%(1,703/3,944). 1단계 결과를 해석할 때 `has_script` 열로 나눠 본다.
 

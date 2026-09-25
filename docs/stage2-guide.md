@@ -200,13 +200,13 @@ manifest 기준 (gpt-5.4-mini, 같은 계산식에 N만 바꾼다. `USD = N × (
 
 배치 적용 시 위 표 ÷ 2. 예: gpt-5.4-mini 3회 = $41.64 ≈ 58,300원, Haiku 4.5 3회 = $53.33 ≈ 74,660원. 9,740 × 3회 = 29,220 요청이라 신규 계정 rate limit로는 하루에 못 끝날 수 있다. Batch가 비용과 한도 양쪽에서 유리하다.
 
-프롬프트 캐시는 v1에서 기대하지 않는다. 공유 접두어가 프롬프트 400 토큰뿐이라 절감 상한이 입력 비용의 400/2,900 ≈ 14%이고, 양쪽 API 모두 캐시 최소 길이 조건이 있다고 알려져 있으나 그 수치는 미확인이다 (R2 B3).
+프롬프트 캐시는 v1에서 기대하지 않는다. 2026-09-26 Anthropic 문서 확인: 최소 캐시 길이가 Haiku 4.5 4,096 토큰, Sonnet 5 1,024 토큰, Opus 5.5·Fable 5.1 512 토큰이라 약 400 토큰짜리 우리 시스템 프롬프트는 어느 모델에서도 캐시되지 않는다. 공유 접두어가 프롬프트 400 토큰뿐이라 절감 상한이 입력 비용의 400/2,900 ≈ 14%이고, 양쪽 API 모두 캐시 최소 길이 조건이 있다고 알려져 있으나 그 수치는 미확인이다 (R2 B3).
 
 주의 하나 더. Anthropic 원문 "Claude 4.7 and later models and Claude Mythos Preview use a newer tokenizer ... This tokenizer produces approximately 30% more tokens for the same text." Sonnet 5·Opus 5 계열은 위 표보다 입력 토큰이 약 1.3배일 수 있다. Haiku 4.5는 구 토크나이저다.
 
 ### 권장 모델 순서 (R2 C5)
 
-1. **gpt-5.4-mini** ($0.75 / $4.50). SkillGate의 기본 모델(논문 "default: gpt-5.4-mini", `config/settings.py`의 `llm_model` 기본값. 단 `llm.py`의 `LLMConfig.model` dataclass 기본값은 `"gpt-4o-mini"`이며 settings가 이를 덮어쓴다)이고 MalSkillBench의 Cisco Skill Scanner (LLM)도 이 모델이라 비교 가능하다. 9,740 × 3회 = $83 (Batch $42).
+1. **gpt-5.4-mini** ($0.75 / $4.50, R2 조회 기준). **주의(2026-09-26):** OpenAI 가격 페이지의 현재 목록(Flagship: gpt-6-astra $10/$50, gpt-6-sol $2/$10, gpt-6-luna $0.10/$0.50; Cyber: gpt-5.6-sol $4/$20)에 gpt-5.4-mini가 보이지 않는다. 레거시 섹션에서 아직 제공되는지 확인한 뒤 쓴다. 비교 목적이 아니라면 gpt-6-luna가 가장 싸다(9,740건 1회 약 $3.55 = 2,900×0.10 + 150×0.50 토큰 기준). SkillGate의 기본 모델(논문 "default: gpt-5.4-mini", `config/settings.py`의 `llm_model` 기본값. 단 `llm.py`의 `LLMConfig.model` dataclass 기본값은 `"gpt-4o-mini"`이며 settings가 이를 덮어쓴다)이고 MalSkillBench의 Cisco Skill Scanner (LLM)도 이 모델이라 비교 가능하다. 9,740 × 3회 = $83 (Batch $42).
 2. **Claude Haiku 4.5** ($1 / $5). MalSkillBench의 Sentry Skill Scanner (full)가 `claude-haiku-4-5-20251001`로 F1 88.6%를 냈다 (https://arxiv.org/html/2606.07131 Table 5 [요약경유]). 9,740 × 3회 = $107 (Batch $53).
 3. 저가 sanity check용 gpt-5-nano 또는 Gemini 2.5 Flash-Lite (3회 $6~10). 파이프라인과 프롬프트 디버깅에만 쓰고 최종 수치에는 쓰지 않는다.
 
