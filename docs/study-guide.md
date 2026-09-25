@@ -280,7 +280,7 @@ SkillTrustBench(5,520건)는 라벨이 악성·의심·정상 **3등급**이라,
 - **1단계 지침**(`docs/stage1-guide.md`): 무엇을 읽어야 하는지(SKILL.md와 스크립트 둘 다), 규칙의 다섯 가족, 점수를 연속값으로 내야 하는 이유, 규칙을 가져올 수 있는 공개 출처와 라이선스(SkillGate MIT, Cisco 규칙 팩 MIT, SkillSpector Apache. trufflehog와 bashlex는 라이선스 때문에 제외), 정규식의 한계와 AST 선택지, 주차별 체크리스트.
 - **2단계 지침**(`docs/stage2-guide.md`): 입력을 어떻게 만들지(SKILL.md만, 길이 제한, 21 MB 샘플), 세 라벨의 정의(취약은 SUSPICIOUS, 해칠 의도는 MALICIOUS), 출력 JSON에 담을 것, temperature 0과 3회 실행의 근거, 심판 LLM도 속는다는 사실과 spotlighting A/B 아이디어, 공식 가격표로 계산한 비용과 예산 순서, 라벨을 모델에 보내지 말 것.
 
-두 지침은 "무엇을, 왜"까지만 적고 "어떻게"는 담당자에게 맡긴다. 지켜야 할 것은 하나, `docs/data-format.md`의 파일 규약이다. manifest를 읽고 predictions.csv를 내면 평가에 붙는다.
+두 지침은 각각 한 장이다. 목표, 지켜야 할 것(파일 규약), 담당자가 고를 선택지, 참고 자료 위치까지만 적고 결정은 담당자가 한다. 세부 자료는 `docs/research/`로 옮겨 두었다. 대표가 모든 것을 아는 사람이 아니므로, 지침이 세세할수록 나중에 대표가 설명 못 할 짐이 된다는 판단이다. manifest를 읽고 predictions.csv를 내면 평가에 붙는다.
 
 ### 11.6 조사는 끝나 있다
 
