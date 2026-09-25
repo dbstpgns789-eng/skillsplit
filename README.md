@@ -25,12 +25,12 @@ skillsplit/
     manifest.csv          23,204행. 스킬 ID, 라벨, 실제/합성, 벡터, 분할  (커밋함)
     raw/                  벤치마크 원본 (커밋하지 않음. docs/data.md 참조)
   skillsplit/
-    stage1/               정적 규칙 탐지기: rules.yaml, scan.py, ast_shell.py
-    stage2/               LLM 판정기: judge.py, prompts/
+    stage1/               정적 규칙 탐지기 (담당자가 만든다. 설계 지침: docs/stage1-guide.md)
+    stage2/               LLM 판정기 (담당자가 만든다. 설계 지침: docs/stage2-guide.md)
   baselines/              기성 스캐너(cisco, SkillSpector, SkillFortify, SkillGate) 실행기
   eval/evaluate.py        manifest + predictions.csv → PR-AUC, FPR 1% 재현율, 합집합·교집합 표
   runs/                   예측 파일과 캐시 (커밋하지 않음)
-  tests/                  pytest
+  tests/                  pytest (각 담당자가 자기 파트 테스트를 넣는다)
   docs/                   가이드, 조사 보고서(docs/research/)
 ```
 
@@ -39,11 +39,18 @@ skillsplit/
 ```bash
 pip install -r requirements.txt
 python data/build_manifest.py                         # data/raw/가 준비된 뒤
-python -m skillsplit.stage1.scan --manifest data/manifest.csv --rules skillsplit/stage1/rules.yaml --out runs/stage1_v0.csv --limit 50
-python -m skillsplit.stage2.judge --manifest data/manifest.csv --prompt skillsplit/stage2/prompts/judge_v1.md --model gpt-5.4-mini --out runs/stage2_v0.csv --limit 20 --dry-run
-python eval/evaluate.py --manifest data/manifest.csv --pred stage1=runs/stage1_v0.csv --pred stage2=runs/stage2_v0.csv --split dev
+# 각 단계 담당자가 자기 탐지기로 runs/<stage>_<version>.csv 를 만든다 (형식: docs/data-format.md)
+python eval/evaluate.py --manifest data/manifest.csv --pred stage1=runs/stage1_v1.csv --pred stage2=runs/stage2_v1.csv --split dev
 python -m pytest -q
 ```
+
+## 역할
+
+- 대표: 데이터(`data/`), 평가(`eval/`), 기준선(`baselines/`), 문서
+- 1단계 담당: `skillsplit/stage1/` 전체를 직접 설계하고 구현한다
+- 2단계 담당: `skillsplit/stage2/` 전체를 직접 설계하고 구현한다
+
+Claude가 참고용으로 만든 v0 구현은 `reference/claude-v0` 브랜치에만 있다. 병합하지 않으며, 보지 않고 시작해도 된다.
 
 ## 규칙 세 줄
 
