@@ -33,7 +33,7 @@
 1. `docs/data-format.md` 읽기 (10분)
 2. `data/raw/`의 스킬 폴더를 몇 개 열어 보기. 악성 하나, 정상 하나
 3. 규칙 출처 중 하나를 골라 규칙 10개로 시작하는 가장 작은 스캐너 만들기
-4. `dev` 50건에 돌려서 `runs/stage1_v1.csv` 내고 `python eval/evaluate.py`로 표 보기
+4. `dev` 50건에 돌려서 `runs/stage1_v1.csv` 내고 평가 스크립트(팀이 만드는 중)에 넣어 표 보기
 
 ## 더 읽기
 

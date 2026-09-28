@@ -37,7 +37,7 @@ SKILL.md의 글을 언어모델에 읽혀서 **"이 스킬이 나쁜 의도를 �
 1. `docs/data-format.md` 읽기 (10분)
 2. SkillGate 프롬프트 원문 읽기 (20분)
 3. API 키 발급, 스킬 5개로 프롬프트 v1 시험. JSON이 제대로 나오는지만 본다
-4. `dev` 20건에 돌려서 `runs/stage2_v1.csv` 내고 `python eval/evaluate.py`로 표 보기
+4. `dev` 20건에 돌려서 `runs/stage2_v1.csv` 내고 평가 스크립트(팀이 만드는 중)에 넣어 표 보기
 
 ## 더 읽기
 

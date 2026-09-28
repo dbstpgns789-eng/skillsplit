@@ -20,7 +20,7 @@
 | `split` | 개발용 / 최종 평가용 | `dev` / `test` |
 | `n_files` | 스킬 폴더의 파일 수. **manifest를 만든 기계의 디스크 기준** | 정수 |
 | `files_expected` | 원본 압축 파일 기준 파일 수 (`data/index_archives.py`) | 정수 / 빈 값 |
-| `intact` | `n_files >= files_expected`이면 1. 0이면 백신이 파일을 격리했거나 압축 해제가 실패한 것. 평가 스크립트는 0인 행을 건너뛴다 | `1` / `0` / 빈 값 |
+| `intact` | `n_files >= files_expected`이면 1. 0이면 백신이 파일을 격리했거나 압축 해제가 실패한 것. 평가 스크립트는 0인 행을 건너뛰어야 한다 | `1` / `0` / 빈 값 |
 | `has_script` | `.py .sh .bash .zsh .js .ts .mjs` 파일이 하나라도 있으면 1 | `1` / `0` |
 | `skill_md_chars` | SKILL.md 길이(바이트) | 정수 |
 
@@ -48,16 +48,18 @@
 
 점수를 어떻게 만들지는 담당자가 정한다. 1단계는 예를 들어 "걸린 규칙의 최대 심각도"(NONE 0, LOW 0.25, MEDIUM 0.5, HIGH 0.75, CRITICAL 1.0)나 "가중 합을 0~1로 눌러 넣기"다. 2단계는 LLM이 낸 확신도다. 기준선 도구도 같은 형식으로 변환한다.
 
-## 3. `eval/evaluate.py` (대표가 소유, 누구나 실행)
+## 3. 평가 스크립트 (팀이 만든다)
+
+manifest와 예측 파일들을 읽어 아래 표를 내는 스크립트. 누가 만들지는 첫 미팅에서 정한다. 참고 구현이 `docs/research/evaluate_reference.py`에 있지만 그대로 쓰지 않아도 된다.
 
 ```
-python eval/evaluate.py --manifest data/manifest.csv \
+python eval/evaluate.py --manifest data/manifest.csv \   # (예시 호출 형태)
     --pred stage1=runs/stage1_v1_20261010.csv \
     --pred stage2=runs/stage2_v1_20261017.csv \
     --split dev
 ```
 
-내는 것:
+내야 하는 것:
 - 예측 파일마다: PR-AUC, FPR 1%에서의 재현율, 임계값 0.5에서의 정밀도·재현율·F1·FPR. 전체 / `origin_group`별 / `vector`별 / `dataset`별
 - 예측 파일이 둘 이상이면: 임계값을 넘긴 것끼리 합집합·교집합·차집합 표 (악성 중 "1단계만 잡음 / 2단계만 잡음 / 둘 다 / 둘 다 놓침")
 
