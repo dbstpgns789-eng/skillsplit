@@ -28,7 +28,7 @@ skillsplit/
     stage1/               정적 규칙 탐지기 (담당자가 만든다. 설계 지침: docs/stage1-guide.md)
     stage2/               LLM 판정기 (담당자가 만든다. 설계 지침: docs/stage2-guide.md)
   baselines/              기성 스캐너(cisco, SkillSpector, SkillFortify, SkillGate) 실행기
-  eval/evaluate.py        manifest + predictions.csv → PR-AUC, FPR 1% 재현율, 합집합·교집합 표
+  eval/                   평가 스크립트 (팀이 만든다. 참고: docs/research/evaluate_reference.py)
   runs/                   예측 파일과 캐시 (커밋하지 않음)
   tests/                  pytest (각 담당자가 자기 파트 테스트를 넣는다)
   docs/                   가이드, 조사 보고서(docs/research/)
@@ -40,17 +40,18 @@ skillsplit/
 pip install -r requirements.txt
 python data/build_manifest.py                         # data/raw/가 준비된 뒤
 # 각 단계 담당자가 자기 탐지기로 runs/<stage>_<version>.csv 를 만든다 (형식: docs/data-format.md)
-python eval/evaluate.py --manifest data/manifest.csv --pred stage1=runs/stage1_v1.csv --pred stage2=runs/stage2_v1.csv --split dev
+# 평가 스크립트(eval/)는 팀이 만든다. manifest와 예측 파일을 읽어 표를 내면 된다. 참고 구현: docs/research/evaluate_reference.py
 python -m pytest -q
 ```
 
 ## 역할
 
-- 대표: 데이터(`data/`), 평가(`eval/`), 기준선(`baselines/`), 문서
+- 대표: 데이터(`data/`), 기준선(`baselines/`), 문서
+- 평가(`eval/`): 첫 미팅에서 누가 만들지 정한다
 - 1단계 담당: `skillsplit/stage1/` 전체를 직접 설계하고 구현한다
 - 2단계 담당: `skillsplit/stage2/` 전체를 직접 설계하고 구현한다
 
-Claude가 참고용으로 만든 v0 구현은 `reference/claude-v0` 브랜치에만 있다. 병합하지 않으며, 보지 않고 시작해도 된다.
+Claude가 참고용으로 만든 v0 구현은 `reference/claude-v0` 브랜치(1·2단계)와 `docs/research/evaluate_reference.py`(평가)에만 있다. 병합하지 않으며, 보지 않고 시작해도 된다.
 
 ## 규칙 세 줄
 
