@@ -217,7 +217,9 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-data/
+data/*
+!data/*.py
+!data/README.md
 runs/
 *.db
 *.sqlite
