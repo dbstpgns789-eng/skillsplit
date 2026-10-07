@@ -77,7 +77,7 @@ Cisco에서 악성에 자주 걸린 규칙(HIGH 이상): MANDATORY_AUTOMATIC_HEL
 ## 4. 비교할 때 주의
 
 - **Cisco 설정.** MaliciousSkillBench 논문의 Cisco는 "Cisco-local-behavioral"(behavioral 켬, HIGH/CRITICAL)이다. dev에서는 두 설정을 모두 돌렸고 차이가 재현율 +0.2%p, 오탐률 +0.1%p로 작다. 그래도 test 기준선과 비교할 때는 같은 설정끼리 놓는다. 논문 비교용은 behavioral 켬이다. behavioral 분석기는 코드를 실행하지 않는 정적 데이터 흐름 분석이다(`behavioral_analyzer.py` 머리말 "without execution").
-- **dev 숫자는 출처가 test와 다르다.** test는 출처 분리라 악성 87%가 SRC009 한 출처다. dev 재현율이 test 재현율을 예측하지 않는다(논문 Cisco test 재현율 2.5%).
+- **dev 숫자는 test 숫자를 예측하지 않는다.** 공식 분할은 test를 dev에 없는 출처로 구성한다(출처 분리). 그래서 dev 재현율이 test 재현율을 예측하지 않는다(논문 Cisco test 재현율 2.5%).
 - **SkillGate 비교 기준은 논문 Table VI 규칙만**(재현율 90%, 오탐 27.1%, SkillsBench-1650)이다. 데이터가 다르므로 차이의 원인을 이 실험만으로 말할 수 없다.
 
 ## 5. 우리 정적 탐지기 설계에 주는 것
