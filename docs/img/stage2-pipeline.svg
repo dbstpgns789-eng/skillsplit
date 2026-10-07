@@ -1,21 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="750" height="330" viewBox="0 55 750 330" font-family="Malgun Gothic, Apple SD Gothic Neo, Noto Sans KR, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="330" viewBox="0 55 960 330" font-family="Malgun Gothic, Apple SD Gothic Neo, Noto Sans KR, sans-serif">
   <defs>
     <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
-      <path d="M0,0 L10,5 L0,10 z" fill="#8a91a0"/>
-    </marker>
-    <marker id="arb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
-      <path d="M0,0 L10,5 L0,10 z" fill="#2f5bd3"/>
+      <path d="M0,0 L10,5 L0,10 z" fill="#5b6475"/>
     </marker>
     <style>
-      .t { font-size: 15px; font-weight: 700; fill: #6b7385; }
-      .s { font-size: 12px; fill: #8a91a0; }
-      .ln { stroke: #8a91a0; stroke-width: 1.8; fill: none; marker-end: url(#ar); }
+      .t { font-size: 15px; font-weight: 700; fill: #1d2330; }
+      .s { font-size: 12px; fill: #4a5162; }
+      .ln { stroke: #5b6475; stroke-width: 1.8; fill: none; marker-end: url(#ar); }
     </style>
   </defs>
-  <rect x="0" y="55" width="750" height="330" fill="#ffffff"/>
+  <rect width="960" height="400" fill="#ffffff"/>
 
   <!-- 스킬 -->
-  <rect x="20" y="150" width="150" height="96" rx="10" fill="#f7f8fb" stroke="#c3c8d3"/>
+  <rect x="20" y="150" width="150" height="96" rx="10" fill="#f4f6fa" stroke="#9aa3b5"/>
   <text x="95" y="186" text-anchor="middle" class="t">스킬</text>
   <text x="95" y="208" text-anchor="middle" class="s">MaliciousSkillBench</text>
   <text x="95" y="226" text-anchor="middle" class="s">dev → held-out</text>
@@ -24,33 +21,46 @@
   <path class="ln" d="M190 198 V272 H216"/>
 
   <!-- 1단계 -->
-  <rect x="218" y="70" width="300" height="80" rx="10" fill="#fbfaf6" stroke="#e3d3ad"/>
+  <rect x="218" y="70" width="300" height="80" rx="10" fill="#fff6e5" stroke="#e0a31a"/>
   <text x="368" y="104" text-anchor="middle" class="t">1단계 정적 탐지기</text>
   <text x="368" y="126" text-anchor="middle" class="s">위험한 글자 패턴</text>
 
   <!-- 2단계 -->
-  <rect x="218" y="176" width="300" height="196" rx="10" fill="#f7f8fb" stroke="#c3c8d3"/>
+  <rect x="218" y="176" width="300" height="196" rx="10" fill="#f7f8fb" stroke="#9aa3b5"/>
   <text x="368" y="200" text-anchor="middle" class="t">2단계 설명서 판정기</text>
   <text x="368" y="218" text-anchor="middle" class="s">같은 스킬을 두 버전이 따로 판정</text>
-  <rect x="234" y="230" width="268" height="52" rx="8" fill="#f4faf6" stroke="#b7d8c3"/>
-  <text x="368" y="253" text-anchor="middle" class="t">LLM 버전 (Claude)</text>
-  <text x="368" y="271" text-anchor="middle" class="s">말로 판단 → 판정 + 확신도 → 점수</text>
+  <rect x="234" y="232" width="268" height="54" rx="8" fill="#eaf7ef" stroke="#2f9a5c"/>
+  <text x="368" y="256" text-anchor="middle" class="t" style="fill:#1f7a45">LLM 버전 (Claude)</text>
+  <text x="368" y="275" text-anchor="middle" class="s">말로 판단 → 판정 + 확신도 → 점수</text>
+  <rect x="234" y="300" width="268" height="58" rx="8" fill="#e3ecff" stroke="#2f5bd3" stroke-width="3"/>
+  <text x="368" y="325" text-anchor="middle" class="t" style="fill:#2f5bd3">Jev 버전 (TypeSafe)</text>
+  <text x="368" y="345" text-anchor="middle" class="s">질문 3개 → 악성 확률 = 점수</text>
+  <text x="520" y="334" class="s" style="font-weight:700;fill:#2f5bd3">◀ Jev</text>
 
-  <!-- Jev 강조 -->
-  <rect x="228" y="292" width="280" height="70" rx="10" fill="#2f5bd3"/>
-  <text x="368" y="322" text-anchor="middle" style="font-size:17px;font-weight:700" fill="#ffffff">Jev 버전 (TypeSafe)</text>
-  <text x="368" y="344" text-anchor="middle" style="font-size:12.5px" fill="#e3ecff">질문 3개 → 악성 확률 = 점수</text>
+  <!-- 화살표 → 채점 -->
+  <path class="ln" d="M518 110 H570 V198 H588"/>
+  <path class="ln" d="M518 272 H570 V198 H588"/>
 
   <!-- 채점 -->
-  <path class="ln" d="M518 110 H560 V198 H578"/>
-  <path class="ln" d="M518 256 H560 V198"/>
-  <path d="M508 327 H560 V214 H578" stroke="#2f5bd3" stroke-width="3" fill="none" marker-end="url(#arb)"/>
-  <rect x="580" y="150" width="140" height="96" rx="10" fill="#1d2330"/>
+  <rect x="590" y="150" width="120" height="96" rx="10" fill="#1d2330"/>
   <text x="650" y="196" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#fff">채점</text>
   <text x="650" y="218" text-anchor="middle" style="font-size:12px" fill="#d9dde5">정답과 비교</text>
 
-  <!-- 설명 꼬리표 -->
-  <rect x="572" y="290" width="164" height="62" rx="8" fill="#e3ecff" stroke="#2f5bd3" stroke-width="1.5"/>
-  <text x="654" y="314" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#2f5bd3">Jev = 2단계 자리의</text>
-  <text x="654" y="334" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#2f5bd3">또 다른 판정기</text>
+  <path class="ln" d="M710 198 H734"/>
+
+  <!-- 성적표 -->
+  <rect x="736" y="70" width="204" height="302" rx="10" fill="#fff" stroke="#1d2330" stroke-width="1.5"/>
+  <text x="838" y="100" text-anchor="middle" class="t">성적표</text>
+  <text x="752" y="134" class="s" style="font-weight:700;fill:#1d2330">성능 (버전마다)</text>
+  <text x="752" y="153" class="s">PR-AUC, FPR 1% 재현율</text>
+  <text x="752" y="188" class="s" style="font-weight:700;fill:#1d2330">네 칸 분해</text>
+  <text x="752" y="207" class="s">정적 × LLM</text>
+  <rect x="748" y="215" width="96" height="22" rx="4" fill="#e3ecff"/>
+  <text x="752" y="231" class="s" style="fill:#2f5bd3;font-weight:700">정적 × Jev</text>
+  <text x="752" y="266" class="s" style="font-weight:700;fill:#1d2330">재현 비교</text>
+  <rect x="748" y="274" width="180" height="40" rx="4" fill="#e3ecff"/>
+  <text x="752" y="290" class="s" style="fill:#2f5bd3;font-weight:700">Jev vs jev-skillbench</text>
+  <text x="752" y="307" class="s" style="fill:#2f5bd3">(0.755 / 0.000)</text>
+  <text x="752" y="342" class="s" style="font-weight:700;fill:#1d2330">버전 비교</text>
+  <text x="752" y="361" class="s">LLM vs Jev 일치·엇갈림</text>
 </svg>
