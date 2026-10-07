@@ -26,4 +26,5 @@ python sample.py          # 공부용에서 100개 뽑기 → dev100/ 폴더 + d
 | `look.py` | 받은 데이터 세어 보기 (라벨, 출처, 길이) |
 | `split.py` | 공식 분할 붙여서 test 구성 보기 |
 | `peek.py` | 실제 악성 스킬 몇 개 열어 보기 |
+| `get_rules.py` | SkillGate·Cisco 공개 규칙을 고정 버전으로 받아 `rules_all.csv`(정규식 한 줄씩)로 합치기. `pip install pyyaml` 필요 |
 | `make_test.py`, `count_cisco.py` | 대표가 Cisco 기준선 돌릴 때 쓰는 것. 팀원은 안 써도 됨 |
