@@ -3,7 +3,7 @@
 import ast, csv, io, re, urllib.request, zipfile, yaml
 from pathlib import Path
 
-REPOS = {  # 버전 고정. 바꾸면 실험 기록(docs/experiments/)에 남긴다
+REPOS = {  # 버전 고정. 바꾸면 docs/decisions.md에 남긴다
     "skillgate": ("awsm-research/skillgate", "c1641c5d5664634296977ff7491f4cff469acfb7"),      # 2026-07-28
     "cisco": ("cisco-ai-defense/skill-scanner", "c3d7fd9fee50cf2ea45f0b381eb61f857360f825"),  # 2026-10-05
 }
