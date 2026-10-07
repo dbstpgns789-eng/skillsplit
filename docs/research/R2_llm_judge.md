@@ -385,7 +385,7 @@ SkillGate 스키마에 `evidence`(원문 인용) 하나만 추가한다. 인용 
 
 - **temperature 0** (SkillGate 코드와 동일, SkillVetBench는 0.2). 이유: 재현성. 3회 돌려도 분산이 작아야 결과를 신뢰할 수 있다.
 - **3회 실행, 평균 ± 표준편차 보고** (SkillGate: "three run average", "per-run std: F1 0.013"). confidence는 3회 평균, 라벨은 다수결.
-- 예산 순서: (1) validation split 974건 × 1회로 프롬프트 튜닝 → (2) test split 1,948건 × 3회 → (3) 여유 있으면 전체 9,740 × 1회. **처음부터 9,740 × 3회를 돌리지 않는다.** Source-Disjoint test 1,384건이 가장 중요한 보고 수치다.
+- 예산 순서: (1) Source-Disjoint validation 835건 × 1회로 프롬프트 튜닝 → (2) 프롬프트를 고정한 뒤 test 1,384건 × 3회, 마지막에 한 번만 → (3) 여유 있으면 전체 9,740 × 1회, 역시 모든 수정이 끝난 뒤 한 번만. (2026-10-07 정정: 처음 쓴 974/1,948은 Random 분할 크기였다. 우리는 Source-Disjoint를 쓴다.) **처음부터 9,740 × 3회를 돌리지 않는다.** Source-Disjoint test 1,384건이 가장 중요한 보고 수치다.
 
 ### C5. 모델
 
@@ -415,7 +415,7 @@ SQLite 한 테이블(`key, request_json, response_json, usage_json, created_at`)
 1. HF에서 `skill_text`, `label`, split manifest 로드 → 길이 분포 재계산 (median/mean/p90/max를 우리 손으로 확인)
 2. 전처리: 절단 + delimiter 감싸기 + (B 조건) datamarking
 3. 호출 래퍼: temperature 0, JSON 출력, 재시도, SQLite 캐시, usage 기록
-4. validation 974건 × 1회로 프롬프트 v1 고정
+4. Source-Disjoint validation 835건 × 1회로 프롬프트 v1 고정
 5. test(Source-Disjoint 1,384) × 3회 × 조건 A/B × 모델 1~2개
 6. 지표: Macro-F1, malicious recall, benign FPR (MaliciousSkillBench와 같은 지표) + AUPRC(confidence 기준) + 3회 std
 7. 오답 상위 20건을 사람이 읽고 라벨 오류/프롬프트 결함 분류

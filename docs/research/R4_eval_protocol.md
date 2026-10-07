@@ -565,9 +565,9 @@ Table VI (ablation) — **우리 2단계 구조와 가장 직접 비교되는 �
 
 ### 5.2 보고할 분할 (우선순위 순)
 
-1. **MaliciousSkillBench Source-Disjoint test (1,384 = 839 M / 545 B)**: 기존 스캐너·Word-SVM 수치와 같은 표에 놓는 유일한 분할. 우리 검출기는 학습이 없으므로 train/val은 쓰지 않지만 반드시 "test 분할만" 보고한다 (learned 베이스라인과 조건 일치).
+1. **MaliciousSkillBench Source-Disjoint test (1,384 = 839 M / 545 B)**: 기존 스캐너·Word-SVM 수치와 같은 표에 놓는 유일한 분할. 우리 검출기는 학습은 없지만 규칙·프롬프트를 train/val에서 고치므로, test는 수정이 끝난 뒤 한 번만 보고 "test 분할만" 보고한다 (learned 베이스라인과 조건 일치).
 2. **MaliciousSkillBench Random test (1,948 = 1,501 M / 447 B)**: Word-SVM Random Macro-F1 0.932 옆. 학습 없는 우리에게는 사실상 무작위 부분집합.
-3. **MaliciousSkillBench 전체 9,740 → provenance별**: `wild` (1,936 B / 229 M), `injected` (153 B / 3,341 M), `synthetic` (90 B / 250 M), `backdoored` (0 / 159), `test_fixture` (56 / 100), `mixed_unresolved` (0 / 3,426, SRC001). 실세계 vs 합성은 여기서만 유의미하다. `mixed_unresolved`는 별도로 두고 합치지 않는다. 학습이 없으니 전체를 써도 누수는 없지만, "frozen split" 규약과 다르므로 "전체 9,740, 학습 없음"을 조건으로 명기.
+3. **MaliciousSkillBench 전체 9,740 → provenance별**: `wild` (1,936 B / 229 M), `injected` (153 B / 3,341 M), `synthetic` (90 B / 250 M), `backdoored` (0 / 159), `test_fixture` (56 / 100), `mixed_unresolved` (0 / 3,426, SRC001). 실세계 vs 합성은 여기서만 유의미하다. `mixed_unresolved`는 별도로 두고 합치지 않는다. 학습은 없지만 규칙·프롬프트를 train/val에서 고치므로 전체 표에는 test가 섞여 누수가 생길 수 있다. 모든 수정이 끝난 뒤 한 번만 내고, "전체 9,740, 수정 동결 후 1회"를 조건으로 명기. (2026-10-07 정정: 처음에는 "누수 없음"으로 썼다.)
 4. **MaliciousSkillBench 전체 attack category별 recall (4,983 mapped)**: 11개 카테고리 multi-label. 문헌에 없는 새 숫자가 된다. SD test만으로는 237개라 소표본.
 5. **SkillsBench-1650 (1,500 B / 150 M)**: SkillGate Table II·VI와 직접 비교. `attack_type` 8종 × `difficulty` 3단계별 recall도 계산(문헌에 없음).
 6. **MalSkillBench (3,944 M / 4,000 B) + wild-only 703 recall**: 데이터를 클론해 쓸 수 있으면(academic-only 조건 충족) Table 5·6과 비교. 벡터별(CI/PI/MIXED), 행동별(B1~B15)은 `_source_inventory.txt`에서 읽는다. 2주차 이후 후보.
