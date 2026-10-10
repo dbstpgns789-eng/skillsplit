@@ -77,13 +77,15 @@ def verify_evidence(quotes, text):
 
 
 def call_api(client, model, text):
-    kwargs = {"temperature": 0} if "haiku" in model else {}  # 최신 Opus·Sonnet은 temperature를 받지 않는다
+    # Opus 4.6보다 나중 모델은 temperature를 받지 않는다. 확인된 haiku-4-5에만 0을 준다.
+    # (CLI의 "haiku" 별칭은 2026-10-10 기준 claude-haiku-5-5로 연결되므로 이름으로 고정한다)
+    kwargs = {"temperature": 0} if "haiku-4-5" in model else {}
     msg = client.messages.create(
         model=model, max_tokens=512, system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_message(text)}], **kwargs)
     raw = "".join(b.text for b in msg.content if b.type == "text")
     usage = {"input_tokens": msg.usage.input_tokens, "output_tokens": msg.usage.output_tokens}
-    return raw, msg.stop_reason == "refusal", usage, msg.model
+    return raw, msg.stop_reason, usage, msg.model
 
 
 def call_cli(model, text, workdir):
@@ -96,10 +98,10 @@ def call_cli(model, text, workdir):
     try:
         out = json.loads(p.stdout)
     except json.JSONDecodeError:
-        return p.stdout + p.stderr, False, {}, model
+        return p.stdout + p.stderr, None, {}, model
     usage = out.get("usage", {})
     used = next(iter(out.get("modelUsage", {})), model)
-    return (out.get("result") or "", out.get("stop_reason") == "refusal",
+    return (out.get("result") or "", out.get("stop_reason"),
             {"input_tokens": usage.get("input_tokens"), "output_tokens": usage.get("output_tokens")}, used)
 
 
@@ -128,9 +130,11 @@ def main():
         text, omitted = truncate(original)
         t0 = time.time()
         if args.backend == "api":
-            raw, refused, usage, used_model = call_api(client, model, text)
+            raw, stop_reason, usage, used_model = call_api(client, model, text)
         else:
-            raw, refused, usage, used_model = call_cli(model, text, workdir)
+            raw, stop_reason, usage, used_model = call_cli(model, text, workdir)
+        refused = stop_reason == "refusal"
+        cut_off = stop_reason == "max_tokens"  # 답이 512토큰에서 끊김. 파싱 실패 원인을 가르기 위해 따로 남긴다
         parsed = None if refused else parse_verdict(raw)
         v = parsed or FAIL_CLOSED
         evidence, dropped = verify_evidence(v.get("evidence") or [], original)
@@ -141,13 +145,14 @@ def main():
             "skill_id": skill_id, "prompt_version": PROMPT_VERSION, "backend": args.backend,
             "model": used_model, "classification": v["classification"], "confidence": v.get("confidence"),
             "risk_tags": v.get("risk_tags", []), "reasoning": v.get("reasoning", ""),
-            "refused": refused, "parse_error": parsed is None and not refused,
+            "refused": refused, "parse_error": parsed is None and not refused, "cut_off": cut_off,
             "evidence_dropped": dropped, "omitted_chars": omitted,
             "seconds": round(time.time() - t0, 2), **usage,
             "raw_if_failed": None if parsed else (raw or "")[:1000],  # 실패 원인을 나중에 볼 수 있게
         })
         print(f"[{i}/{len(folders)}] {skill_id} {v['classification']} score={score:.3f}"
-              f"{' REFUSED' if refused else ''}{' PARSE_ERROR' if parsed is None and not refused else ''}")
+              f"{' REFUSED' if refused else ''}{' PARSE_ERROR' if parsed is None and not refused else ''}"
+              f"{' CUT_OFF' if cut_off else ''}")
 
 
 if __name__ == "__main__":

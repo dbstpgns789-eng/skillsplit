@@ -18,10 +18,11 @@ Jev가 들어가는 지표 (모든 숫자에 데이터 이름·모델·버전을
 | 지표 | 무엇을 보나 |
 |---|---|
 | PR-AUC, FPR 1% 재현율 | 주 성능. LLM 버전과 같은 방식으로 |
-| 문턱 0.5 재현율·오탐률 | jev-skillbench(0.755 / 0.000)와 재현 비교 |
+| 문턱 0.5 재현율·오탐률 | jev-skillbench와 재현 비교 (1,000개 표본 0.755 / 0.000, 전체 7,907개 0.755 / 0.0008) |
 | 네 칸 분해 (정적 × Jev) | 정적 탐지기와 겹치는 범위, Jev만 잡는 범위 |
 | LLM–Jev 일치·엇갈림 | 두 판정 방식의 차이, 사례 분석 재료 |
 | 건당 비용·시간 | 운영 비교 (1건 약 $0.0001, 1.1초) |
+| 3회 반복 흔들림 | 같은 스킬 3번의 점수 차이, 문턱 0.5를 넘나든 수 (LLM 버전도 같이) |
 
 ## Jev를 어디에 어떻게 쓰나
 
@@ -36,7 +37,7 @@ Jev가 들어가는 지표 (모든 숫자에 데이터 이름·모델·버전을
 ```
 
 **왜 쓰나.**
-1. 재현 비교: jev-skillbench가 MalSkillBench에서 낸 Jev 결과(단독, 문턱 0.5: 재현율 0.755, 오탐률 0.000. 개인 저장소, 동료 심사 없음)를 같은 질문으로 MaliciousSkillBench에서 다시 잰다.
+1. 재현 비교: jev-skillbench가 MalSkillBench에서 낸 Jev 결과를 같은 질문으로 MaliciousSkillBench에서 다시 잰다. 단독, 문턱 0.5 기준으로 1,000개 표본(악성 498, 정상 502)에서 재현율 0.755·오탐률 0.000, 같은 저장소의 전체 7,907개(`jev-1.13.0`)에서 0.755·0.0008이다. 개인 저장소이고 동료 심사는 없다.
 2. 성격 비교: 말로 판단하는 LLM과 확률만 내는 판정 전용 모델 중 어느 쪽이 무엇을 잘 잡는가.
 3. 사례 분석: LLM 버전과 Jev 버전이 엇갈린 스킬을 들여다본다.
 
@@ -47,7 +48,7 @@ Jev가 들어가는 지표 (모든 숫자에 데이터 이름·모델·버전을
 | 주차 | Jev로 할 일 |
 |---|---|
 | 1 | 접근 확보 (완료, 2026-10-07) |
-| 2 | dev100 전체를 Jev로 판정해 LLM 버전과 비교 |
+| 2 | dev100 전체를 Jev로 3번 판정해 LLM 버전과 비교, 흔들림 기록 |
 | 3~4 | dev로 점검. 질문 문장을 바꾸면 재현 비교가 깨지므로 v0 유지가 기본, 바꾸면 v1로 따로 기록 |
 | 4 끝 | 동결 |
 | 5 | held-out 1회 판정 → 성적표의 "2단계-Jev" 줄, 네 칸 분해, 엇갈린 사례 |
@@ -58,6 +59,8 @@ Jev가 들어가는 지표 (모든 숫자에 데이터 이름·모델·버전을
 - Jev는 내부 구조가 공개되지 않아 왜 그렇게 판정했는지 알 수 없다. 사례 분석의 "이유"는 LLM 버전의 근거와 Jev의 `attack_vector` 답으로 대신한다.
 - 입력에 `benchmark_id`, 출처를 넣지 않는다(라벨 누출 방지). Jev 입력 한도 32k 토큰은 공통 자르기 규칙으로 지킨다.
 - jev-skillbench의 네 번째 질문(behavior)은 점수에 쓰이지 않아 v0에서 뺐다.
+- Jev도 같은 요청에 점수가 조금씩 다르다. jev-skillbench에서 같은 표본을 두 번 돌리니 963개 중 64%만 점수가 같았고, 5~6개는 0.5를 넘나들었다. 그래서 3번 돌린다(아래 "3회 반복").
+- `typesafe-ai/jev`는 별칭이라 버전이 바뀔 수 있다. Vercel 경유 응답에는 정확한 버전이 오지 않으므로(details에 `typesafe-ai/jev`로만 남음) 실행 날짜를 함께 기록한다.
 
 ## 출력 (팀 공통 형식)
 
@@ -67,7 +70,7 @@ Jev가 들어가는 지표 (모든 숫자에 데이터 이름·모델·버전을
 {"skill_id": "ASB04_000247", "score": 0.9933, "evidence": ["원문에서 그대로 옮긴 구절"]}
 ```
 
-같은 이름의 `.details.jsonl`에 판정기만의 정보(모델, 라벨, 확신도, 거부, 파싱 실패, 자른 글자 수, 토큰, 시간)가 남는다.
+같은 이름의 `.details.jsonl`에 판정기만의 정보(모델, 라벨, 확신도, 거부, 파싱 실패, 답 끊김, 자른 글자 수, 토큰, 시간)가 남는다.
 
 ## 돌리기
 
@@ -89,6 +92,19 @@ python -m skillsplit.stage2.jev_judge data/dev100 --out runs/stage2_jev_v0_dev10
 
 중간에 끊겨도 같은 `--out`으로 다시 돌리면 이미 끝난 스킬은 건너뛴다.
 
+### 3회 반복
+
+temperature 0이어도 답이 완전히 같다는 보장은 없다(Anthropic 문서). 흔들림을 줄일 뿐이다. 그래서 LLM 버전과 Jev 버전 모두 같은 스킬을 3번 판정하고, 결과 파일을 `_r1`, `_r2`, `_r3`으로 따로 쓴다. 보고서에는 세 번의 점수 평균과 함께 흔들림(점수가 모두 같은 비율, 판정이 바뀐 수, 0.5를 넘나든 수)을 적는다.
+
+```bash
+for r in 1 2 3; do
+  python -m skillsplit.stage2.llm_judge data/dev100 --out runs/stage2_llm_v0_dev100_r$r.jsonl
+  python -m skillsplit.stage2.jev_judge data/dev100 --out runs/stage2_jev_v0_dev100_r$r.jsonl --via vercel
+done
+```
+
+모델을 바꿀 때 주의: Opus 4.6보다 나중 모델은 temperature 설정 자체를 받지 않는다. 코드는 `claude-haiku-4-5`에만 temperature 0을 준다. CLI의 `haiku` 별칭은 2026-10-10 기준 `claude-haiku-5-5`로 연결되므로, CLI 결과는 모델 이름을 details에서 확인한다.
+
 ## v0에서 정한 것과 근거
 
 | 항목 | 값 | 근거 |
@@ -97,7 +113,7 @@ python -m skillsplit.stage2.jev_judge data/dev100 --out runs/stage2_jev_v0_dev10
 | 프롬프트 | SkillGate 시스템 프롬프트를 SKILL.md 단독 입력에 맞게 고침 + 기능-행동 일치 질문 + 결함은 악성 아님 + 근거 인용 | R2 A1, C2, C3 |
 | 인젝션 방어 | `<<<SKILL_MD_BEGIN>>>` 구분자, 안의 지시 무시, 판정 조작 시도는 악성 신호 | R2 A5, C7 조건 A (Spotlighting delimiting) |
 | 모델 | `claude-haiku-4-5`, temperature 0 | R2 C4, C5 |
-| 파싱 실패·거부 | SUSPICIOUS 0.4 (fail-closed), details에 표시 | R2 C3 |
+| 파싱 실패·거부 | SUSPICIOUS 0.4 (fail-closed), details에 표시. 답이 512토큰에서 끊긴 경우는 `cut_off`로 따로 표시 | R2 C3, 리뷰(세훈) |
 | 근거 검사 | 원문에 없는 인용은 버리고 개수를 기록 | R2 C3 |
 | 입력에서 뺀 것 | `benchmark_id`, `source_id`, 스킬 폴더 이름 | 라벨 누출 방지 (R2 C1-5) |
 | Jev 질문 | jev-skillbench의 is_malicious, attack_vector, harm_severity | 기존 결과를 다른 데이터에서 재현 |
@@ -105,5 +121,5 @@ python -m skillsplit.stage2.jev_judge data/dev100 --out runs/stage2_jev_v0_dev10
 ## 아직 안 한 것
 
 - Anthropic API 실행 (키 필요, 또는 Vercel 키로 Claude 호출 가능한지 확인), Jev로 dev100 전체
-- 결과 캐시(SQLite, R2 C6), 3회 반복 실행, Spotlighting B 조건 (2주차 이후)
+- 결과 캐시(SQLite, R2 C6), 3회 반복 실행과 흔들림 집계, Spotlighting B 조건 (2주차 이후)
 - 점수 문턱 θ와 거부 처리 규칙 확정 (4주차)
