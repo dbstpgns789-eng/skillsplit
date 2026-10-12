@@ -32,4 +32,5 @@ python sample.py          # 공부용에서 100개 뽑기 → dev100/ 폴더 + d
 | `sg_attack_only.py` | SkillGate가 60초 안에 못 끝낸 샘플을 sigma 뺀 attack 규칙만으로 판정 확인. `.venv-skillgate/Scripts/python sg_attack_only.py <SKILL.md>` |
 | `signals.py` | 두 도구가 놓친 악성에서 찾은 행위 신호 6개를 dev 전체에서 집계(원문 출력 없음). `python signals.py` → `runs_dev/signals.csv` |
 | `src001_signals.py`, `src001_profile.py`, `src001_ngrams.py` | SRC001에서 두 도구가 놓친 악성 분석(E3). `package_manifest.csv` 필요. 원문 출력 없음 |
+| `e4_diff.py`, `e4_excerpt.py` | E3의 남은 539개가 공격인지 라벨 문제인지 판정(E4). 비교 결과와 URL·명령을 가린 200자 발췌만 출력 |
 | `make_test.py`, `count_cisco.py` | 대표가 Cisco 기준선 돌릴 때 쓰는 것. 팀원은 안 써도 됨 |
