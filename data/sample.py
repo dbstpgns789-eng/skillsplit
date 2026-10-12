@@ -33,7 +33,7 @@ s = pd.concat([mal, ben])
 for _, r in s.iterrows():
     d = os.path.join("dev100", r["benchmark_id"])
     os.makedirs(d, exist_ok=True)
-    with open(os.path.join(d, "SKILL.md"), "w", encoding="utf-8") as f:
+    with open(os.path.join(d, "SKILL.md"), "w", encoding="utf-8", newline="") as f:  # Windows에서도 원문 줄바꿈(LF) 유지
         f.write(str(r["skill_text"]) if pd.notna(r["skill_text"]) else "")
 
 s[["benchmark_id", "label", "provenance", "attack_category_codes"]].to_csv("dev100_labels.csv", index=False)
