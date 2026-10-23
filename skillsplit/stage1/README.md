@@ -26,24 +26,26 @@ tests/
 
 범위(scope): `frontmatter`(맨 앞 `---` 블록), `prose`(코드 블록 밖), `code`(코드 블록 안, 언어 무관), `all`(문서 전체).
 
-### 2.1 산문 규칙 (직접 만듦)
+### 2.1 산문 규칙 (E2~E4에서 나온 것)
 
-| id | 심각도 | 범위 | 잡는 것 | 근거 |
+"노리는 공격 유형"은 규칙의 목표를 설명한 것이고 정규식 자체가 아니다. 정규식은 정해 둔 단어 목록과 구조(예: 출력 동사 + 일정 거리 안의 "시작 때 받은 지시" 명사)에 맞는 표현만 잡는다. 같은 뜻을 목록에 없는 단어나 다른 언어로 쓰면 놓친다. 의미 판단은 2단계 몫이다.
+
+| id | 심각도 | 범위 | 노리는 공격 유형 | 정규식 상태 |
 |---|---|---|---|---|
-| RUN_DIRECTIVE | HIGH | prose | 로컬 스크립트·코드 실행을 필수·선행·초기화 단계로 요구 | E2 run_directive + E3 init_directive |
-| PROMPT_LEAK | HIGH | prose | 시작 때 받은 지시문·시스템 프롬프트를 출력·전사하라 | E3 prompt_leak, E4 |
-| OVERRIDE | HIGH | prose | 이전 지침·안전 장치를 무효로 하라, 제한 없이 동작하라 | E4 |
-| LURE | HIGH | prose | 비밀번호 걸린 압축 파일, 붙여넣기 사이트, 터미널에 붙여넣기 | E2 lure |
-| HOMOGLYPH | HIGH | all | 한 단어 안에 라틴 + 키릴·그리스 문자 | E2, E4 |
-| RECON_DUMP | MEDIUM | prose | 첫 답으로 파일 목록·권한·계정·환경 정보를 정리해 내라 | E4 |
-| HIDDEN_DIRECTIVE | MEDIUM | all | HTML 주석 안에 에이전트에게 하는 지시 | E4 |
-| PERSONA_LOCK | MEDIUM | prose | 특정 인물로만 행세하고 AI임을 인정하지 말라 | E4 |
-| CONCEAL | MEDIUM | prose | 사용자에게 알리지 말라, 몰래 실행하라. **결합 전용**: 산문 HIGH 규칙이 함께 걸릴 때만 | E2 conceal |
-| DESC_BYPASS | LOW | frontmatter | description에 bypass·unrestricted 등. **결합 전용**: 다른 규칙이 함께 걸릴 때만 | E2 desc_bypass |
+| RUN_DIRECTIVE | HIGH | prose | 로컬 스크립트·코드 실행을 필수·선행·초기화 단계로 요구 | 기존 (E2 `signals.py` run_directive + E3 `src001_signals.py` init_directive) |
+| PROMPT_LEAK | HIGH | prose | 시작 때 받은 지시문·시스템 프롬프트를 출력·전사하라 | 기존 (E3 `src001_signals.py` prompt_leak), 넓힐 예정 |
+| OVERRIDE | HIGH | prose | 이전 지침·안전 장치를 무효로 하라, 제한 없이 동작하라 | 새로 작성 (E4 유형) |
+| LURE | HIGH | prose | 비밀번호 걸린 압축 파일, 붙여넣기 사이트, 터미널에 붙여넣기 | 기존 (E2 `signals.py` lure) |
+| HOMOGLYPH | HIGH | all | 한 단어 안에 라틴 + 키릴·그리스 문자 | 기존 (E2 `signals.py` homoglyph) |
+| RECON_DUMP | MEDIUM | prose | 첫 답으로 파일 목록·권한·계정·환경 정보를 정리해 내라 | 새로 작성 (E4 유형) |
+| HIDDEN_DIRECTIVE | MEDIUM | all | HTML 주석 안에 에이전트에게 하는 지시 | 새로 작성 (E4 유형) |
+| PERSONA_LOCK | MEDIUM | prose | 특정 인물로만 행세하고 AI임을 인정하지 말라 | 새로 작성 (E4 유형) |
+| CONCEAL | MEDIUM | prose | 사용자에게 알리지 말라, 몰래 실행하라. **결합 전용**: 산문 HIGH 규칙이 함께 걸릴 때만 | 기존 (E2 `signals.py` conceal) |
+| DESC_BYPASS | LOW | frontmatter | description에 bypass·unrestricted 등. **결합 전용**: 다른 규칙이 함께 걸릴 때만 | 기존 (E2 `signals.py` desc_bypass) |
 
 ### 2.2 코드 블록 규칙 (기존 도구에서 결합형만 옮김)
 
-| id | 심각도 | 잡는 것 | 출처 (R1 §8) |
+| id | 심각도 | 노리는 공격 유형 | 정규식 출처 (R1 §8) |
 |---|---|---|---|
 | PIPE_TO_SHELL | CRITICAL | 내려받은 내용을 바로 셸로 넘김 | SkillGate RCE001~004 (MIT) |
 | DECODE_EXEC | CRITICAL | 같은 코드 블록에서 base64 디코드 + eval/exec | SkillGate RCE010~012 (MIT), SkillSpector SC3 (Apache-2.0) |
