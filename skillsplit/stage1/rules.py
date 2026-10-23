@@ -64,4 +64,29 @@ RULES = [
     _r("DESC_BYPASS", "LOW", "frontmatter",
        r"\b(?:bypass\w*|unrestricted|jailbreak\w*|no (?:restrictions?|limits?)|ignore (?:safety|previous|all)|classified|override (?:safety|guardrails?))\b",
        requires=("*",)),
+    # --- 코드 블록 규칙 (README §2.2). 기존 도구의 결합형 규칙을 참고해 새로 씀. v0는 한 줄 안에서만 본다(줄을 넘는 경우는 v1 AST) ---
+    _r("PIPE_TO_SHELL", "CRITICAL", "code",
+       r"\b(?:curl|wget)\b[^\n|]{0,200}\|\s*(?:sudo\s+)?(?:ba|z|da)?sh\b|\b(?:ba|z)?sh\s+<\(\s*(?:curl|wget)\b",
+       source="SkillGate RCE001-004 (MIT) 참고"),
+    _r("DECODE_EXEC", "CRITICAL", "code",
+       r"\b(?:eval|exec)\s*\([^\n]{0,200}\b(?:b64decode|atob)\b|\bbase64\s+(?:-d|--decode)\b[^\n]{0,100}\|\s*(?:ba|z)?sh\b",
+       source="SkillGate RCE010-012 (MIT), SkillSpector SC3 (Apache-2.0) 참고"),
+    _r("REMOTE_EXEC", "CRITICAL", "code",
+       r"\b(?:exec|eval)\s*\(\s*(?:requests\.get|urllib\.request\.urlopen|urlopen|httpx\.get)\s*\("
+       r"|\b(?:iex|Invoke-Expression)\b[^\n]{0,100}\b(?:iwr|irm|Invoke-WebRequest|Invoke-RestMethod|DownloadString)\b"
+       r"|\b(?:iwr|irm|Invoke-WebRequest|Invoke-RestMethod)\b[^\n]{0,200}\|\s*(?:iex|Invoke-Expression)\b",
+       source="SkillSpector agent_skill_remote_bootstrap_execution (Apache-2.0), Cisco skill-scanner (Apache-2.0) 참고"),
+    _r("CRED_PATH", "HIGH", "code",
+       r"[/\\]\.ssh[/\\](?:id_\w+|authorized_keys)|\.aws[/\\]credentials|Library/Keychains|\bsecurity\s+(?:dump-keychain|find-generic-password)\b"
+       r"|\.git-credentials|\bLogin Data\b",
+       source="SkillGate CRED001-019 (MIT) 참고"),
+    _r("EXFIL_SEND", "HIGH", "code",
+       r"\bcurl\b[^\n]{0,200}(?:\s-d\s*@|--data(?:-binary)?\s*@|\s-F\s*['\"]?\w+=@|--upload-file)"
+       r"|\bwget\b[^\n]{0,200}--post-file|\b(?:nc|ncat|netcat)\b[^\n]{0,60}\d{2,5}\s*<"
+       r"|requests\.post\([^\n]{0,200}(?:open\(|os\.environ|files=)",
+       source="SkillGate EXFIL (MIT), SkillSpector E1 (Apache-2.0) 참고"),
+    _r("PERSISTENCE", "HIGH", "code",
+       r"\(\s*crontab\s+-l|\bcrontab\s+-e\b|>>\s*~?/?\S*\.(?:bashrc|zshrc|bash_profile|profile)\b|\blaunchctl\s+load\b"
+       r"|\bsystemctl\s+(?:--user\s+)?enable\b|LaunchAgents/",
+       source="SkillGate PRIV 계열 (MIT) 참고"),
 ]
