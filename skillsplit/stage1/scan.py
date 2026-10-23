@@ -2,9 +2,12 @@
 
   python -m skillsplit.stage1.scan data/dev100 --out runs/stage1_v0_dev100.jsonl
 """
+import argparse
 import bisect
 import re
+from pathlib import Path
 
+from ..stage2.common import append_jsonl, list_skills, read_skill, write_result
 from .rules import RULES, WEIGHT
 
 OVERSIZE = 200_000       # 넘으면 details에 oversize=true (R2 §3, 2단계와 같은 기준)
@@ -84,3 +87,26 @@ def scan_text(text, rules=RULES):
     fired.sort(key=lambda r: (-WEIGHT[r.severity], hits[r.id][0]))
     evidence = [f"{r.id}@L{ln}" for r in fired for ln in hits[r.id]]
     return 1 - keep, evidence, details
+
+
+def main():
+    ap = argparse.ArgumentParser(description="1단계 정적 탐지기 v0")
+    ap.add_argument("skills_root", help="스킬 폴더들이 들어 있는 폴더 (예: data/dev100)")
+    ap.add_argument("--out", required=True, help="결과 파일(.jsonl). 같은 이름의 .details.jsonl도 생긴다")
+    args = ap.parse_args()
+    out = Path(args.out)
+    details_path = out.with_suffix(".details.jsonl")
+    for p in (out, details_path):  # 정적 탐지기는 빨라서 이어 돌리기 없이 매번 새로 쓴다
+        p.unlink(missing_ok=True)
+    n = 0
+    for folder in list_skills(args.skills_root):
+        skill_id, text = read_skill(folder)
+        score, evidence, details = scan_text(text)
+        write_result(out, skill_id, score, evidence)
+        append_jsonl(details_path, {"skill_id": skill_id, **details})
+        n += 1
+    print(f"{n}개 → {out}")
+
+
+if __name__ == "__main__":
+    main()
