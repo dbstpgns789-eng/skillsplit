@@ -96,6 +96,12 @@ python -m skillsplit.stage2.jev_judge data/dev100 --out runs/stage2_jev_v0_dev10
 
 중간에 끊겨도 같은 `--out`으로 다시 돌리면 이미 끝난 스킬은 건너뛴다.
 
+3회 결과를 모아 성능·흔들림·비용·정적과의 네 칸을 보려면(정적 결과 파일은 1단계 `scan`으로 만든다):
+
+```bash
+python -m skillsplit.stage2.summarize_runs data/dev100_labels.csv runs/stage1_v0_dev100.jsonl
+```
+
 ### 3회 반복
 
 temperature 0이어도 답이 완전히 같다는 보장은 없다(Anthropic 문서). 흔들림을 줄일 뿐이다. 그래서 LLM 버전과 Jev 버전 모두 같은 스킬을 3번 판정하고, 결과 파일을 `_r1`, `_r2`, `_r3`으로 따로 쓴다. 보고서에는 세 번의 점수 평균과 함께 흔들림(점수가 모두 같은 비율, 판정이 바뀐 수, 0.5를 넘나든 수)을 적는다.
@@ -128,6 +134,6 @@ done
 
 ## 아직 안 한 것
 
-- Vercel 경유 LLM 버전으로 dev100 전체, Jev로 dev100 전체 (경로는 2026-10-24 확인 완료)
+- dev100 첫 정식 판정은 끝남(2026-10-24, `docs/stage2-log.md`). 다음: 정상 오탐 7개·셋 다 놓친 1개 읽기, 형식 오류와 근거 인용 탈락 원인 확인
 - 결과 캐시(SQLite, R2 C6), 3회 반복 실행과 흔들림 집계, Spotlighting B 조건 (2주차 이후)
 - 점수 문턱 θ와 거부 처리 규칙 확정 (4주차)
