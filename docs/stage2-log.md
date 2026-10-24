@@ -2,12 +2,19 @@
 
 숫자마다 데이터, 버전, 모델을 함께 적는다(방향 정리 문서의 주간 보고 규칙).
 
+## 2026-10-24 · Claude 호출 경로 확보 · Vercel AI Gateway (anthropic/claude-haiku-4.5)
+
+Anthropic 키가 없어 LLM 버전을 API로 못 돌리던 문제를 Jev와 같은 Vercel 키로 풀었다.
+
+- 경로: Anthropic Messages 형식 그대로, 주소만 `https://ai-gateway.vercel.sh`. 모델 `anthropic/claude-haiku-4.5`, 가격 입력 100만 토큰당 $1·출력 $5(Anthropic 직접과 같음).
+- temperature: Anthropic API 버전 `2026-10-21`부터 temperature가 거부된다. Vercel 경유는 `anthropic-version: 2026-10-21`로 보내도 temperature 0을 받았다. 실제 적용 여부는 같은 질문(짧은 정상 문장)을 5번씩 물어 확인했다: temperature 0이면 5번 모두 같은 답, 기본값이면 5번 모두 다른 답.
+- 코드: `llm_judge.py`에 `--backend vercel`(기본값)을 추가했다. temperature는 SDK 2.3.0이 인자로 받지 않아 `extra_body`로 넣는다. details에 `temperature`, `date`를 남긴다.
+- 확인: 가짜 정상 스킬 1개 → SAFE 0.99. dev100의 ASB04_000247(정답 악성) → MALICIOUS 0.95, 입력 2,535토큰·출력 270토큰, 3.2초, 약 $0.004. 같은 스킬에 Jev는 p=0.92(10-07).
+- 고침: 10-10 항목에서 `\r\n`, `\n`이라고 적으려던 글자가 실제 줄바꿈 문자로 들어가 줄이 깨져 있던 것을 바로잡았다.
+
 ## 2026-10-10 · PR #2 리뷰 반영 (세훈)
 
-- **dev100 파일 확인 (백신 삭제 여부)**: 폴더 100개, `SKILL.md` 100개. 판정기가 읽는 방식(`read_text`)으로 읽으면 100개 모두 `skills.csv` 원문과 같다. 파일 바이트를 그대로 해시하면 100개 모두 `exact_hash`와 다르게 나오는데, `sample.py`가 Windows에서 줄바꿈을 `
-`으로 바꿔 썼기 때문이다(`
-`→`
-`으로 되돌리면 94개가 `exact_hash`와 같고, 나머지 6개는 데이터셋 자체의 `exact_hash`가 원문 해시와 다르지만 바이트는 원문과 같다). 판정기 입력에는 영향이 없다. 해시로 확인할 때는 줄바꿈을 먼저 맞춰야 한다(왕민 PR #3의 `newline=""` 안내와 같은 문제).
+- **dev100 파일 확인 (백신 삭제 여부)**: 폴더 100개, `SKILL.md` 100개. 판정기가 읽는 방식(`read_text`)으로 읽으면 100개 모두 `skills.csv` 원문과 같다. 파일 바이트를 그대로 해시하면 100개 모두 `exact_hash`와 다르게 나오는데, `sample.py`가 Windows에서 줄바꿈을 `\r\n`으로 바꿔 썼기 때문이다(`\r\n`→`\n`으로 되돌리면 94개가 `exact_hash`와 같고, 나머지 6개는 데이터셋 자체의 `exact_hash`가 원문 해시와 다르지만 바이트는 원문과 같다). 판정기 입력에는 영향이 없다. 해시로 확인할 때는 줄바꿈을 먼저 맞춰야 한다(왕민 PR #3의 `newline=""` 안내와 같은 문제).
 - **jev-skillbench 숫자의 출처**: 0.755 / 0.000은 1,000개 표본(악성 498, 정상 502), 전체 7,907개(`jev-1.13.0`)는 0.755 / 0.0008. README에 둘 다 적었다.
 - **답 끊김 기록**: 답 길이 한도(512토큰)에서 끊기면 details에 `cut_off: true`. 파싱 실패가 끊김 때문인지 다른 이유인지 가를 수 있다.
 - **3회 반복**: 2주차부터 LLM·Jev 모두 3번씩 돌려 흔들림을 기록한다(README "3회 반복").

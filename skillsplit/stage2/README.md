@@ -75,12 +75,16 @@ Jev가 들어가는 지표 (모든 숫자에 데이터 이름·모델·버전을
 ## 돌리기
 
 ```bash
-pip install anthropic           # LLM 버전 (api)
+pip install anthropic           # LLM 버전 (2026-10-24 확인: 2.3.0)
 # data/README.md 순서대로 data/dev100 을 먼저 만든다
 
-# LLM 버전, Anthropic API (최종 측정용)
+# LLM 버전, Vercel AI Gateway 경유 (최종 측정용. Jev와 같은 키·크레딧)
+export AI_GATEWAY_API_KEY=...
+python -m skillsplit.stage2.llm_judge data/dev100 --out runs/stage2_llm_v0_dev100_r1.jsonl
+
+# LLM 버전, Anthropic API 직접 (키가 있을 때. temperature를 보내지 않음, 아래 주의 참고)
 export ANTHROPIC_API_KEY=...
-python -m skillsplit.stage2.llm_judge data/dev100 --out runs/stage2_llm_v0_dev100.jsonl
+python -m skillsplit.stage2.llm_judge data/dev100 --out runs/x.jsonl --backend api
 
 # LLM 버전, 로컬 claude CLI (API 키 없이 코드 점검용. 재현성이 약해 보고서 수치로 쓰지 않음)
 python -m skillsplit.stage2.llm_judge data/dev100 --out runs/smoke.jsonl --backend cli --limit 5
@@ -103,7 +107,11 @@ for r in 1 2 3; do
 done
 ```
 
-모델을 바꿀 때 주의: Opus 4.6보다 나중 모델은 temperature 설정 자체를 받지 않는다. 코드는 `claude-haiku-4-5`에만 temperature 0을 준다. CLI의 `haiku` 별칭은 2026-10-10 기준 `claude-haiku-5-5`로 연결되므로, CLI 결과는 모델 이름을 details에서 확인한다.
+모델과 temperature 주의:
+- Anthropic API는 버전 `2026-10-21`부터 모든 모델에서 temperature를 거부하고, Python SDK 1.x부터는 temperature 인자 자체가 없다.
+- Vercel 경유는 `extra_body`로 넣은 temperature 0을 받아서 실제로 적용한다. 2026-10-24에 같은 질문을 5번 물어 확인했다(0이면 5번 같은 답, 기본값이면 5번 다른 답). 게이트웨이 정책이 바뀔 수 있으니 details의 `date`, `temperature`를 같이 본다.
+- 그래서 코드는 Vercel 경유 `anthropic/claude-haiku-4.5`에만 temperature 0을 주고, 다른 경로·모델은 보내지 않는다.
+- CLI의 `haiku` 별칭은 2026-10-10 기준 `claude-haiku-5-5`로 연결되므로, CLI 결과는 모델 이름을 details에서 확인한다.
 
 ## v0에서 정한 것과 근거
 
@@ -112,7 +120,7 @@ done
 | 자르기 | 12,000자 초과 시 머리 8,000 + 꼬리 4,000 | `docs/research/R2_llm_judge.md` C1, SkillGate 코드 |
 | 프롬프트 | SkillGate 시스템 프롬프트를 SKILL.md 단독 입력에 맞게 고침 + 기능-행동 일치 질문 + 결함은 악성 아님 + 근거 인용 | R2 A1, C2, C3 |
 | 인젝션 방어 | `<<<SKILL_MD_BEGIN>>>` 구분자, 안의 지시 무시, 판정 조작 시도는 악성 신호 | R2 A5, C7 조건 A (Spotlighting delimiting) |
-| 모델 | `claude-haiku-4-5`, temperature 0 | R2 C4, C5 |
+| 모델 | `claude-haiku-4-5`(Vercel 이름 `anthropic/claude-haiku-4.5`), temperature 0 | R2 C4, C5. 경로는 Vercel (2026-10-24, Anthropic 키 없음) |
 | 파싱 실패·거부 | SUSPICIOUS 0.4 (fail-closed), details에 표시. 답이 512토큰에서 끊긴 경우는 `cut_off`로 따로 표시 | R2 C3, 리뷰(세훈) |
 | 근거 검사 | 원문에 없는 인용은 버리고 개수를 기록 | R2 C3 |
 | 입력에서 뺀 것 | `benchmark_id`, `source_id`, 스킬 폴더 이름 | 라벨 누출 방지 (R2 C1-5) |
@@ -120,6 +128,6 @@ done
 
 ## 아직 안 한 것
 
-- Anthropic API 실행 (키 필요, 또는 Vercel 키로 Claude 호출 가능한지 확인), Jev로 dev100 전체
+- Vercel 경유 LLM 버전으로 dev100 전체, Jev로 dev100 전체 (경로는 2026-10-24 확인 완료)
 - 결과 캐시(SQLite, R2 C6), 3회 반복 실행과 흔들림 집계, Spotlighting B 조건 (2주차 이후)
 - 점수 문턱 θ와 거부 처리 규칙 확정 (4주차)
