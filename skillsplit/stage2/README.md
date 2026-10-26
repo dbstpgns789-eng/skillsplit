@@ -1,6 +1,8 @@
-# stage2 — 설명서 판정기 (담당: 오준서)
+# stage2 — AI 판정기 (담당: 오준서)
 
 SKILL.md의 자연어를 읽고 악성일 가능성을 0~1 점수로 낸다. 두 버전이 있다.
+
+이름: 1단계와 2단계는 같은 SKILL.md를 읽는다. 다른 것은 판단 방법이다. 1단계는 사람이 써 둔 규칙(정규식)으로, 2단계는 AI 모델이 글을 읽고 판단한다. Jev는 LLM이 아닌 판정 전용 모델이라 "LLM 판정기" 대신 "AI 판정기"라고 부른다(2026-10-24, 이전 이름 "설명서 판정기").
 
 | 버전 | 파일 | 어떻게 판단하나 | 점수 |
 |---|---|---|---|
@@ -28,12 +30,12 @@ Jev가 들어가는 지표 (모든 숫자에 데이터 이름·모델·버전을
 
 **Jev란.** TypeSafe가 만든 판정 전용 AI 모델이다. 글을 생성하지 않고, 정해진 질문(예/아니오, 보기 고르기, 단계 점수)에 확률로 답한다. 내부 구조는 공개되지 않았다. 우리 과제에서는 **2단계 자리에 들어가는 또 다른 판정기**로, LLM 버전과 같은 입력·같은 출력 형식·같은 채점으로 비교된다.
 
-**위치.** Jev는 2단계(설명서 판정기)의 두 번째 버전이다. 1단계(정적 탐지기)와는 따로, LLM 버전과는 나란히 돈다. 두 버전은 같은 스킬을 같은 입력 처리(`common.py`)로 받는다.
+**위치.** Jev는 2단계(AI 판정기)의 두 번째 버전이다. 1단계(정적 탐지기)와는 따로, LLM 버전과는 나란히 돈다. 두 버전은 같은 스킬을 같은 입력 처리(`common.py`)로 받는다.
 
 ```
-1단계 정적 탐지기 ─────────────────────┐
-2단계 설명서 판정기 ─┬─ LLM 버전 (Claude) ─┼─▶ 채점 → 성적표
-                    └─ Jev 버전          ─┘
+1단계 정적 탐지기 ─────────────────┐
+2단계 AI 판정기 ─┬─ LLM 버전 (Claude) ─┼─▶ 채점 → 성적표
+                └─ Jev 버전          ─┘
 ```
 
 **왜 쓰나.**
@@ -75,12 +77,16 @@ Jev가 들어가는 지표 (모든 숫자에 데이터 이름·모델·버전을
 ## 돌리기
 
 ```bash
-pip install anthropic           # LLM 버전 (api)
+pip install anthropic           # LLM 버전 (2026-10-24 확인: 2.3.0)
 # data/README.md 순서대로 data/dev100 을 먼저 만든다
 
-# LLM 버전, Anthropic API (최종 측정용)
+# LLM 버전, Vercel AI Gateway 경유 (최종 측정용. Jev와 같은 키·크레딧)
+export AI_GATEWAY_API_KEY=...
+python -m skillsplit.stage2.llm_judge data/dev100 --out runs/stage2_llm_v0_dev100_r1.jsonl
+
+# LLM 버전, Anthropic API 직접 (키가 있을 때. temperature를 보내지 않음, 아래 주의 참고)
 export ANTHROPIC_API_KEY=...
-python -m skillsplit.stage2.llm_judge data/dev100 --out runs/stage2_llm_v0_dev100.jsonl
+python -m skillsplit.stage2.llm_judge data/dev100 --out runs/x.jsonl --backend api
 
 # LLM 버전, 로컬 claude CLI (API 키 없이 코드 점검용. 재현성이 약해 보고서 수치로 쓰지 않음)
 python -m skillsplit.stage2.llm_judge data/dev100 --out runs/smoke.jsonl --backend cli --limit 5
@@ -91,6 +97,12 @@ python -m skillsplit.stage2.jev_judge data/dev100 --out runs/stage2_jev_v0_dev10
 ```
 
 중간에 끊겨도 같은 `--out`으로 다시 돌리면 이미 끝난 스킬은 건너뛴다.
+
+3회 결과를 모아 성능·흔들림·비용·정적과의 네 칸을 보려면(정적 결과 파일은 1단계 `scan`으로 만든다):
+
+```bash
+python -m skillsplit.stage2.summarize_runs data/dev100_labels.csv runs/stage1_v0_dev100.jsonl
+```
 
 ### 3회 반복
 
@@ -103,7 +115,11 @@ for r in 1 2 3; do
 done
 ```
 
-모델을 바꿀 때 주의: Opus 4.6보다 나중 모델은 temperature 설정 자체를 받지 않는다. 코드는 `claude-haiku-4-5`에만 temperature 0을 준다. CLI의 `haiku` 별칭은 2026-10-10 기준 `claude-haiku-5-5`로 연결되므로, CLI 결과는 모델 이름을 details에서 확인한다.
+모델과 temperature 주의:
+- Anthropic API는 버전 `2026-10-21`부터 모든 모델에서 temperature를 거부하고, Python SDK 1.x부터는 temperature 인자 자체가 없다.
+- Vercel 경유는 `extra_body`로 넣은 temperature 0을 받아서 실제로 적용한다. 2026-10-24에 같은 질문을 5번 물어 확인했다(0이면 5번 같은 답, 기본값이면 5번 다른 답). 게이트웨이 정책이 바뀔 수 있으니 details의 `date`, `temperature`를 같이 본다.
+- 그래서 코드는 Vercel 경유 `anthropic/claude-haiku-4.5`에만 temperature 0을 주고, 다른 경로·모델은 보내지 않는다.
+- CLI의 `haiku` 별칭은 2026-10-10 기준 `claude-haiku-5-5`로 연결되므로, CLI 결과는 모델 이름을 details에서 확인한다.
 
 ## v0에서 정한 것과 근거
 
@@ -112,7 +128,7 @@ done
 | 자르기 | 12,000자 초과 시 머리 8,000 + 꼬리 4,000 | `docs/research/R2_llm_judge.md` C1, SkillGate 코드 |
 | 프롬프트 | SkillGate 시스템 프롬프트를 SKILL.md 단독 입력에 맞게 고침 + 기능-행동 일치 질문 + 결함은 악성 아님 + 근거 인용 | R2 A1, C2, C3 |
 | 인젝션 방어 | `<<<SKILL_MD_BEGIN>>>` 구분자, 안의 지시 무시, 판정 조작 시도는 악성 신호 | R2 A5, C7 조건 A (Spotlighting delimiting) |
-| 모델 | `claude-haiku-4-5`, temperature 0 | R2 C4, C5 |
+| 모델 | `claude-haiku-4-5`(Vercel 이름 `anthropic/claude-haiku-4.5`), temperature 0 | R2 C4, C5. 경로는 Vercel (2026-10-24, Anthropic 키 없음) |
 | 파싱 실패·거부 | SUSPICIOUS 0.4 (fail-closed), details에 표시. 답이 512토큰에서 끊긴 경우는 `cut_off`로 따로 표시 | R2 C3, 리뷰(세훈) |
 | 근거 검사 | 원문에 없는 인용은 버리고 개수를 기록 | R2 C3 |
 | 입력에서 뺀 것 | `benchmark_id`, `source_id`, 스킬 폴더 이름 | 라벨 누출 방지 (R2 C1-5) |
@@ -120,6 +136,6 @@ done
 
 ## 아직 안 한 것
 
-- Anthropic API 실행 (키 필요, 또는 Vercel 키로 Claude 호출 가능한지 확인), Jev로 dev100 전체
+- dev100 첫 정식 판정은 끝남(2026-10-24, `docs/stage2-log.md`). 다음: 정상 오탐 7개·셋 다 놓친 1개 읽기, 형식 오류와 근거 인용 탈락 원인 확인
 - 결과 캐시(SQLite, R2 C6), 3회 반복 실행과 흔들림 집계, Spotlighting B 조건 (2주차 이후)
 - 점수 문턱 θ와 거부 처리 규칙 확정 (4주차)

@@ -5,15 +5,20 @@
 
 쓰는 법
   python -m skillsplit.stage2.llm_judge data/dev100 --out runs/stage2_llm_v0_dev100.jsonl
+  python -m skillsplit.stage2.llm_judge data/dev100 --out runs/stage2_llm_v0_dev100_r1.jsonl --backend vercel
   python -m skillsplit.stage2.llm_judge data/dev100 --out runs/smoke.jsonl --backend cli --limit 5
 
 backend
-  api : Anthropic API. ANTHROPIC_API_KEY 필요. 최종 측정은 이것으로 한다(temperature 0 고정 가능).
+  vercel : Vercel AI Gateway를 거쳐 Claude를 부른다. AI_GATEWAY_API_KEY 필요(Jev와 같은 키·크레딧).
+           최종 측정은 이것으로 한다. temperature 0이 적용됨을 2026-10-24에 확인했다.
+  api : Anthropic API 직접. ANTHROPIC_API_KEY 필요. API 버전 2026-10-21부터 temperature를 받지 않아
+        temperature를 보내지 않는다(기본값 1로 판정됨). 우리 팀은 키가 없어 쓰지 않았다.
   cli : 로컬 claude CLI. API 키 없이 코드가 끝까지 도는지 확인하는 시험용. temperature를 고정할 수 없어
         재현성이 약하므로 보고서 수치로 쓰지 않는다.
 """
 import argparse
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -27,6 +32,8 @@ PROMPT_VERSION = "v0"
 PROMPT_FILE = Path(__file__).parent / "prompt_v0.txt"
 SYSTEM_PROMPT = PROMPT_FILE.read_text(encoding="utf-8")
 DEFAULT_MODEL = "claude-haiku-4-5"  # R2 C5의 2순위. 소형 모델로 비용 추정(R2 B3)과 맞춘다.
+VERCEL_URL = "https://ai-gateway.vercel.sh"
+VERCEL_MODEL = "anthropic/claude-haiku-4.5"  # 같은 모델의 Vercel 이름(점 표기)
 
 # 파싱 실패나 거부 때 쓰는 값. R2 C3처럼 "안전"으로 넘기지 않고 SUSPICIOUS 0.4로 둔다(fail-closed).
 FAIL_CLOSED = {"classification": "SUSPICIOUS", "confidence": 0.4, "risk_tags": [], "evidence": [], "reasoning": ""}
@@ -76,10 +83,9 @@ def verify_evidence(quotes, text):
     return kept, len(quotes) - len(kept)
 
 
-def call_api(client, model, text):
-    # Opus 4.6보다 나중 모델은 temperature를 받지 않는다. 확인된 haiku-4-5에만 0을 준다.
-    # (CLI의 "haiku" 별칭은 2026-10-10 기준 claude-haiku-5-5로 연결되므로 이름으로 고정한다)
-    kwargs = {"temperature": 0} if "haiku-4-5" in model else {}
+def call_api(client, model, text, temperature):
+    # SDK 1.x부터 temperature 인자가 없어져 extra_body로 요청에 그대로 넣는다.
+    kwargs = {"extra_body": {"temperature": temperature}} if temperature is not None else {}
     msg = client.messages.create(
         model=model, max_tokens=512, system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_message(text)}], **kwargs)
@@ -109,18 +115,26 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("skills_root", help="스킬 폴더들이 들어 있는 폴더 (예: data/dev100)")
     ap.add_argument("--out", required=True, help="결과 파일(.jsonl). 같은 이름의 .details.jsonl도 생긴다")
-    ap.add_argument("--backend", choices=["api", "cli"], default="api")
-    ap.add_argument("--model", default=None, help=f"기본: api={DEFAULT_MODEL}, cli=haiku")
+    ap.add_argument("--backend", choices=["vercel", "api", "cli"], default="vercel")
+    ap.add_argument("--model", default=None, help=f"기본: vercel={VERCEL_MODEL}, api={DEFAULT_MODEL}, cli=haiku")
     ap.add_argument("--limit", type=int, default=None, help="앞에서부터 N개만 (시험용)")
     args = ap.parse_args()
 
-    model = args.model or (DEFAULT_MODEL if args.backend == "api" else "haiku")
+    model = args.model or {"vercel": VERCEL_MODEL, "api": DEFAULT_MODEL, "cli": "haiku"}[args.backend]
+    # temperature 0은 Vercel 경유 haiku-4.5에서만 확인했다. 다른 모델·경로는 보내지 않는다(기록에 None).
+    temperature = 0 if args.backend == "vercel" and model == VERCEL_MODEL else None
     details_path = Path(args.out).with_suffix(".details.jsonl")
     skip = done_ids(args.out)
     folders = [f for f in list_skills(args.skills_root) if f.name not in skip][: args.limit]
 
     client = None
-    if args.backend == "api":
+    if args.backend == "vercel":
+        import anthropic
+        key = os.environ.get("AI_GATEWAY_API_KEY")
+        if not key:
+            raise SystemExit("AI_GATEWAY_API_KEY 환경변수가 없습니다. 새 PowerShell 창에서 다시 실행해 보세요.")
+        client = anthropic.Anthropic(api_key=key, base_url=VERCEL_URL)
+    elif args.backend == "api":
         import anthropic
         client = anthropic.Anthropic()
     workdir = tempfile.mkdtemp(prefix="stage2_cli_")  # cli는 빈 폴더에서 실행: 저장소 파일을 못 보게
@@ -129,8 +143,8 @@ def main():
         skill_id, original = read_skill(folder)
         text, omitted = truncate(original)
         t0 = time.time()
-        if args.backend == "api":
-            raw, stop_reason, usage, used_model = call_api(client, model, text)
+        if client:
+            raw, stop_reason, usage, used_model = call_api(client, model, text, temperature)
         else:
             raw, stop_reason, usage, used_model = call_cli(model, text, workdir)
         refused = stop_reason == "refusal"
@@ -143,7 +157,7 @@ def main():
         write_result(args.out, skill_id, score, evidence)
         append_jsonl(details_path, {
             "skill_id": skill_id, "prompt_version": PROMPT_VERSION, "backend": args.backend,
-            "model": used_model, "classification": v["classification"], "confidence": v.get("confidence"),
+            "model": used_model, "temperature": temperature, "date": time.strftime("%Y-%m-%d"), "classification": v["classification"], "confidence": v.get("confidence"),
             "risk_tags": v.get("risk_tags", []), "reasoning": v.get("reasoning", ""),
             "refused": refused, "parse_error": parsed is None and not refused, "cut_off": cut_off,
             "evidence_dropped": dropped, "omitted_chars": omitted,

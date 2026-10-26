@@ -27,7 +27,7 @@
 
   <!-- 2단계 -->
   <rect x="218" y="176" width="300" height="196" rx="10" fill="#f7f8fb" stroke="#9aa3b5"/>
-  <text x="368" y="200" text-anchor="middle" class="t">2단계 설명서 판정기</text>
+  <text x="368" y="200" text-anchor="middle" class="t">2단계 AI 판정기</text>
   <text x="368" y="218" text-anchor="middle" class="s">같은 스킬을 두 버전이 따로 판정</text>
   <rect x="234" y="232" width="268" height="54" rx="8" fill="#eaf7ef" stroke="#2f9a5c"/>
   <text x="368" y="256" text-anchor="middle" class="t" style="fill:#1f7a45">LLM 버전 (Claude)</text>
