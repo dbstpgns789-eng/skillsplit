@@ -116,8 +116,8 @@ done
 ```
 
 모델과 temperature 주의:
-- Anthropic API는 버전 `2026-10-21`부터 모든 모델에서 temperature를 거부하고, Python SDK 1.x부터는 temperature 인자 자체가 없다.
-- Vercel 경유는 `extra_body`로 넣은 temperature 0을 받아서 실제로 적용한다. 2026-10-24에 같은 질문을 5번 물어 확인했다(0이면 5번 같은 답, 기본값이면 5번 다른 답). 게이트웨이 정책이 바뀔 수 있으니 details의 `date`, `temperature`를 같이 본다.
+- Anthropic API는 버전 `2026-10-21`부터 모든 모델에서 temperature를 거부하고, Python SDK 1.x부터는 temperature 인자 자체가 없다. (공식 문서: https://platform.claude.com/docs/en/api/versioning , https://platform.claude.com/docs/en/api/migration-2026-10-21 )
+- Vercel 경유는 `extra_body`로 넣은 temperature 0을 받아서 실제로 적용한다. Vercel 문서에는 temperature를 받는다는 내용만 있고 실제 적용 여부는 없어, 자체 시험으로 확인했다. 2026-10-24에 같은 질문을 5번 물었더니 0이면 5번 같은 답, 기본값이면 5번 다른 답이었다. 게이트웨이 정책이 바뀔 수 있으니 details의 `date`, `temperature`를 같이 본다.
 - 그래서 코드는 Vercel 경유 `anthropic/claude-haiku-4.5`에만 temperature 0을 주고, 다른 경로·모델은 보내지 않는다.
 - CLI의 `haiku` 별칭은 2026-10-10 기준 `claude-haiku-5-5`로 연결되므로, CLI 결과는 모델 이름을 details에서 확인한다.
 
