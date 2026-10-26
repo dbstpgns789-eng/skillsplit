@@ -33,8 +33,11 @@ DEFAULT_MODEL = "claude-haiku-4-5"  # R2 C5의 2순위. 소형 모델로 비용 
 VERCEL_URL = "https://ai-gateway.vercel.sh"
 VERCEL_MODEL = "anthropic/claude-haiku-4.5"  # 같은 모델의 Vercel 이름(점 표기)
 
-# 파싱 실패나 거부 때 쓰는 값. R2 C3처럼 "안전"으로 넘기지 않고 SUSPICIOUS 0.4로 둔다(fail-closed).
+# 파싱 실패나 거부 때 details에 남기는 값. R2 C3처럼 "안전"으로 넘기지 않는다(fail-closed).
 FAIL_CLOSED = {"classification": "SUSPICIOUS", "confidence": 0.4, "risk_tags": [], "evidence": [], "reasoning": ""}
+# 실패·거부의 점수. 예전에는 위 값을 to_score로 바꿔 0.467이 되어 문턱 0.5 아래, 즉 "안전"으로 처리됐다(PR #5 리뷰).
+# 2/3은 문턱 후보(0.5, MALICIOUS만=2/3) 어느 쪽이든 "걸림"이다. 문턱을 2/3보다 높이면 이 값도 같이 올린다.
+FAIL_SCORE = 2 / 3
 
 
 def user_message(text):
@@ -153,7 +156,7 @@ def main():
         parsed = None if refused else parse_verdict(raw)
         v = parsed or FAIL_CLOSED
         evidence, dropped = verify_evidence(v.get("evidence") or [], original)
-        score = to_score(v["classification"], v.get("confidence", 0.5))
+        score = to_score(v["classification"], v.get("confidence", 0.5)) if parsed else FAIL_SCORE
 
         write_result(args.out, skill_id, score, evidence)
         append_jsonl(details_path, {
