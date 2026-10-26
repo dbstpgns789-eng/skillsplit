@@ -6,7 +6,7 @@ SKILL.md의 자연어를 읽고 악성일 가능성을 0~1 점수로 낸다. 두
 
 | 버전 | 파일 | 어떻게 판단하나 | 점수 |
 |---|---|---|---|
-| LLM | `llm_judge.py` + `prompt_v0.txt` | LLM이 SAFE / SUSPICIOUS / MALICIOUS와 확신도, 근거 인용을 JSON으로 답한다 | 라벨 구간 + 확신도 (`to_score`) |
+| LLM | `llm_judge.py` + `prompt_v2.txt` (기본. v0는 10/24 기준선, v1은 폐기) | LLM이 SAFE / SUSPICIOUS / MALICIOUS와 확신도, 근거 인용을 JSON으로 답한다 | 라벨 구간 + 확신도 (`to_score`) |
 | Jev | `jev_judge.py` + `jev_questions_v0.json` | Jev가 정해진 질문 세 개에 확률로 답한다 | `is_malicious` 확률 그대로 |
 
 두 버전은 같은 입력 처리(`common.py`: 읽기, 자르기)를 쓴다.
