@@ -1,8 +1,8 @@
 """2단계 3회 판정 결과를 한 번에 집계한다: 성능, 흔들림, 비용, 정적과의 네 칸, LLM-Jev 비교.
 
-  python -m skillsplit.stage2.summarize_runs data/dev100_labels.csv runs/stage1_v0_dev100.jsonl
+  python -m skillsplit.stage2.summarize_runs data/dev100_labels.csv runs/stage1_v0_dev100.jsonl [LLM 프롬프트 버전, 기본 v0]
 
-읽는 파일: runs/stage2_{llm,jev}_v0_dev100_r{1,2,3}.jsonl 과 각각의 .details.jsonl
+읽는 파일: runs/stage2_llm_<버전>_dev100_r{1,2,3}.jsonl, runs/stage2_jev_v0_dev100_r{1,2,3}.jsonl 과 각각의 .details.jsonl
 "걸림" 기준은 2026-10-12 합의대로 정적 score > 0, 2단계 score >= 0.5. 세 번의 평균 점수로 판정한다.
 """
 import csv
@@ -40,16 +40,17 @@ def main():
     y = {r["benchmark_id"]: int(r["label"]) for r in csv.DictReader(open(sys.argv[1], encoding="utf-8"))}
     static = {k: v["score"] for k, v in load(sys.argv[2]).items()}
     mal = sorted(i for i in y if y[i])
+    versions = {"llm": sys.argv[3] if len(sys.argv) > 3 else "v0", "jev": "v0"}
     mean = {}
 
     for ver in ("llm", "jev"):
-        runs = [load(RUNS / f"stage2_{ver}_v0_dev100_r{r}.jsonl") for r in (1, 2, 3)]
-        details = [load(RUNS / f"stage2_{ver}_v0_dev100_r{r}.details.jsonl") for r in (1, 2, 3)]
+        runs = [load(RUNS / f"stage2_{ver}_{versions[ver]}_dev100_r{r}.jsonl") for r in (1, 2, 3)]
+        details = [load(RUNS / f"stage2_{ver}_{versions[ver]}_dev100_r{r}.details.jsonl") for r in (1, 2, 3)]
         scores = [{i: run[i]["score"] for i in y} for run in runs]
         mean[ver] = {i: st.mean(s[i] for s in scores) for i in y}
         m = mean[ver]
 
-        print(f"\n== {ver} ({details[0][mal[0]]['model']}) ==")
+        print(f"\n== {ver} {versions[ver]} ({details[0][mal[0]]['model']}) ==")
         for r, s in enumerate(scores, 1):
             print(f"r{r}: PR-AUC {pr_auc(s, y):.3f}  0.5 기준 악성 {caught(s, y, 0.5)[0]}/50, 정상 오탐 {caught(s, y, 0.5)[1]}/50")
         tp, fp = caught(m, y, 0.5)

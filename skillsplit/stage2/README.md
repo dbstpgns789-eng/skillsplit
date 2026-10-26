@@ -127,6 +127,7 @@ done
 |---|---|---|
 | 자르기 | 12,000자 초과 시 머리 8,000 + 꼬리 4,000 | `docs/research/R2_llm_judge.md` C1, SkillGate 코드 |
 | 프롬프트 | SkillGate 시스템 프롬프트를 SKILL.md 단독 입력에 맞게 고침 + 기능-행동 일치 질문 + 결함은 악성 아님 + 근거 인용 | R2 A1, C2, C3 |
+| 프롬프트 v2 (2026-10-26, 현재 기본) | v0 + 무관한 강제 실행에 숨김·확인 생략 지시가 붙으면 내용이 안 보여도 MALICIOUS(두 문장을 인용할 수 있을 때만) + 가짜 권위·수정 금지 신호 + `[REDACTED…]`·자르기 표시는 신호 아님 + 근거는 글자 그대로 | dev100 회색 지대 20개 읽기, `docs/stage2-log.md` 10-26. v1은 폐기 |
 | 인젝션 방어 | `<<<SKILL_MD_BEGIN>>>` 구분자, 안의 지시 무시, 판정 조작 시도는 악성 신호 | R2 A5, C7 조건 A (Spotlighting delimiting) |
 | 모델 | `claude-haiku-4-5`(Vercel 이름 `anthropic/claude-haiku-4.5`), temperature 0 | R2 C4, C5. 경로는 Vercel (2026-10-24, Anthropic 키 없음) |
 | 파싱 실패·거부 | SUSPICIOUS 0.4 (fail-closed), details에 표시. 답이 512토큰에서 끊긴 경우는 `cut_off`로 따로 표시 | R2 C3, 리뷰(세훈) |
@@ -136,6 +137,6 @@ done
 
 ## 아직 안 한 것
 
-- dev100 첫 정식 판정은 끝남(2026-10-24, `docs/stage2-log.md`). 다음: 정상 오탐 7개·셋 다 놓친 1개 읽기, 형식 오류와 근거 인용 탈락 원인 확인
+- 프롬프트 v2를 dev100 3회로 기록, 문턱과 실패 점수 결정(실패 0.467이 문턱 아래인 문제), dev 전체 1회(동결 직전)
 - 결과 캐시(SQLite, R2 C6), 3회 반복 실행과 흔들림 집계, Spotlighting B 조건 (2주차 이후)
 - 점수 문턱 θ와 거부 처리 규칙 확정 (4주차)
