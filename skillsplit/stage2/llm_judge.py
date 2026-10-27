@@ -28,15 +28,16 @@ from pathlib import Path
 
 from .common import append_jsonl, done_ids, list_skills, read_skill, truncate, write_result
 
-PROMPT_VERSION = "v0"
-PROMPT_FILE = Path(__file__).parent / "prompt_v0.txt"
-SYSTEM_PROMPT = PROMPT_FILE.read_text(encoding="utf-8")
+PROMPT_DIR = Path(__file__).parent  # prompt_v0.txt, prompt_v1.txt ... 버전마다 파일 하나
 DEFAULT_MODEL = "claude-haiku-4-5"  # R2 C5의 2순위. 소형 모델로 비용 추정(R2 B3)과 맞춘다.
 VERCEL_URL = "https://ai-gateway.vercel.sh"
 VERCEL_MODEL = "anthropic/claude-haiku-4.5"  # 같은 모델의 Vercel 이름(점 표기)
 
-# 파싱 실패나 거부 때 쓰는 값. R2 C3처럼 "안전"으로 넘기지 않고 SUSPICIOUS 0.4로 둔다(fail-closed).
+# 파싱 실패나 거부 때 details에 남기는 값. R2 C3처럼 "안전"으로 넘기지 않는다(fail-closed).
 FAIL_CLOSED = {"classification": "SUSPICIOUS", "confidence": 0.4, "risk_tags": [], "evidence": [], "reasoning": ""}
+# 실패·거부의 점수. 예전에는 위 값을 to_score로 바꿔 0.467이 되어 문턱 0.5 아래, 즉 "안전"으로 처리됐다(PR #5 리뷰).
+# 2/3은 문턱 후보(0.5, MALICIOUS만=2/3) 어느 쪽이든 "걸림"이다. 문턱을 2/3보다 높이면 이 값도 같이 올린다.
+FAIL_SCORE = 2 / 3
 
 
 def user_message(text):
@@ -83,21 +84,21 @@ def verify_evidence(quotes, text):
     return kept, len(quotes) - len(kept)
 
 
-def call_api(client, model, text, temperature):
+def call_api(client, model, system, text, temperature):
     # SDK 1.x부터 temperature 인자가 없어져 extra_body로 요청에 그대로 넣는다.
     kwargs = {"extra_body": {"temperature": temperature}} if temperature is not None else {}
     msg = client.messages.create(
-        model=model, max_tokens=512, system=SYSTEM_PROMPT,
+        model=model, max_tokens=512, system=system,
         messages=[{"role": "user", "content": user_message(text)}], **kwargs)
     raw = "".join(b.text for b in msg.content if b.type == "text")
     usage = {"input_tokens": msg.usage.input_tokens, "output_tokens": msg.usage.output_tokens}
     return raw, msg.stop_reason, usage, msg.model
 
 
-def call_cli(model, text, workdir):
+def call_cli(model, prompt_file, text, workdir):
     """claude CLI를 도구 없이, 사용자 설정 없이 한 번 부른다. 스킬 내용은 표준입력으로만 들어간다."""
     cmd = [shutil.which("claude"), "-p", "--model", model, "--restricted", "--setting-sources", "",
-           "--no-session-persistence", "--output-format", "json", "--system-prompt-file", str(PROMPT_FILE),
+           "--no-session-persistence", "--output-format", "json", "--system-prompt-file", str(prompt_file),
            "--disallowedTools", "Read Write Edit Glob Grep WebFetch WebSearch Task Agent NotebookEdit"]
     p = subprocess.run(cmd, input=user_message(text), capture_output=True, text=True,
                        encoding="utf-8", cwd=workdir, timeout=180)
@@ -118,8 +119,11 @@ def main():
     ap.add_argument("--backend", choices=["vercel", "api", "cli"], default="vercel")
     ap.add_argument("--model", default=None, help=f"기본: vercel={VERCEL_MODEL}, api={DEFAULT_MODEL}, cli=haiku")
     ap.add_argument("--limit", type=int, default=None, help="앞에서부터 N개만 (시험용)")
+    ap.add_argument("--prompt", default="v2", help="프롬프트 버전 (prompt_<버전>.txt). v0=10-24 기준선, v1=폐기, v2=현재")
     args = ap.parse_args()
 
+    prompt_file = PROMPT_DIR / f"prompt_{args.prompt}.txt"
+    system = prompt_file.read_text(encoding="utf-8")
     model = args.model or {"vercel": VERCEL_MODEL, "api": DEFAULT_MODEL, "cli": "haiku"}[args.backend]
     # temperature 0은 Vercel 경유 haiku-4.5에서만 확인했다. 다른 모델·경로는 보내지 않는다(기록에 None).
     temperature = 0 if args.backend == "vercel" and model == VERCEL_MODEL else None
@@ -144,19 +148,19 @@ def main():
         text, omitted = truncate(original)
         t0 = time.time()
         if client:
-            raw, stop_reason, usage, used_model = call_api(client, model, text, temperature)
+            raw, stop_reason, usage, used_model = call_api(client, model, system, text, temperature)
         else:
-            raw, stop_reason, usage, used_model = call_cli(model, text, workdir)
+            raw, stop_reason, usage, used_model = call_cli(model, prompt_file, text, workdir)
         refused = stop_reason == "refusal"
         cut_off = stop_reason == "max_tokens"  # 답이 512토큰에서 끊김. 파싱 실패 원인을 가르기 위해 따로 남긴다
         parsed = None if refused else parse_verdict(raw)
         v = parsed or FAIL_CLOSED
         evidence, dropped = verify_evidence(v.get("evidence") or [], original)
-        score = to_score(v["classification"], v.get("confidence", 0.5))
+        score = to_score(v["classification"], v.get("confidence", 0.5)) if parsed else FAIL_SCORE
 
         write_result(args.out, skill_id, score, evidence)
         append_jsonl(details_path, {
-            "skill_id": skill_id, "prompt_version": PROMPT_VERSION, "backend": args.backend,
+            "skill_id": skill_id, "prompt_version": args.prompt, "backend": args.backend,
             "model": used_model, "temperature": temperature, "date": time.strftime("%Y-%m-%d"), "classification": v["classification"], "confidence": v.get("confidence"),
             "risk_tags": v.get("risk_tags", []), "reasoning": v.get("reasoning", ""),
             "refused": refused, "parse_error": parsed is None and not refused, "cut_off": cut_off,

@@ -6,7 +6,7 @@ SKILL.md의 자연어를 읽고 악성일 가능성을 0~1 점수로 낸다. 두
 
 | 버전 | 파일 | 어떻게 판단하나 | 점수 |
 |---|---|---|---|
-| LLM | `llm_judge.py` + `prompt_v0.txt` | LLM이 SAFE / SUSPICIOUS / MALICIOUS와 확신도, 근거 인용을 JSON으로 답한다 | 라벨 구간 + 확신도 (`to_score`) |
+| LLM | `llm_judge.py` + `prompt_v2.txt` (기본. v0는 10/24 기준선, v1은 폐기) | LLM이 SAFE / SUSPICIOUS / MALICIOUS와 확신도, 근거 인용을 JSON으로 답한다 | 라벨 구간 + 확신도 (`to_score`) |
 | Jev | `jev_judge.py` + `jev_questions_v0.json` | Jev가 정해진 질문 세 개에 확률로 답한다 | `is_malicious` 확률 그대로 |
 
 두 버전은 같은 입력 처리(`common.py`: 읽기, 자르기)를 쓴다.
@@ -116,8 +116,8 @@ done
 ```
 
 모델과 temperature 주의:
-- Anthropic API는 버전 `2026-10-21`부터 모든 모델에서 temperature를 거부하고, Python SDK 1.x부터는 temperature 인자 자체가 없다.
-- Vercel 경유는 `extra_body`로 넣은 temperature 0을 받아서 실제로 적용한다. 2026-10-24에 같은 질문을 5번 물어 확인했다(0이면 5번 같은 답, 기본값이면 5번 다른 답). 게이트웨이 정책이 바뀔 수 있으니 details의 `date`, `temperature`를 같이 본다.
+- Anthropic API는 버전 `2026-10-21`부터 모든 모델에서 temperature를 거부하고, Python SDK 1.x부터는 temperature 인자 자체가 없다. (공식 문서: https://platform.claude.com/docs/en/api/versioning , https://platform.claude.com/docs/en/api/migration-2026-10-21 )
+- Vercel 경유는 `extra_body`로 넣은 temperature 0을 받아서 실제로 적용한다. Vercel 문서에는 temperature를 받는다는 내용만 있고 실제 적용 여부는 없어, 자체 시험으로 확인했다. 2026-10-24에 같은 질문을 5번 물었더니 0이면 5번 같은 답, 기본값이면 5번 다른 답이었다. 게이트웨이 정책이 바뀔 수 있으니 details의 `date`, `temperature`를 같이 본다.
 - 그래서 코드는 Vercel 경유 `anthropic/claude-haiku-4.5`에만 temperature 0을 주고, 다른 경로·모델은 보내지 않는다.
 - CLI의 `haiku` 별칭은 2026-10-10 기준 `claude-haiku-5-5`로 연결되므로, CLI 결과는 모델 이름을 details에서 확인한다.
 
@@ -127,15 +127,16 @@ done
 |---|---|---|
 | 자르기 | 12,000자 초과 시 머리 8,000 + 꼬리 4,000 | `docs/research/R2_llm_judge.md` C1, SkillGate 코드 |
 | 프롬프트 | SkillGate 시스템 프롬프트를 SKILL.md 단독 입력에 맞게 고침 + 기능-행동 일치 질문 + 결함은 악성 아님 + 근거 인용 | R2 A1, C2, C3 |
+| 프롬프트 v2 (2026-10-26, 현재 기본) | v0 + 무관한 강제 실행에 숨김·확인 생략 지시가 붙으면 내용이 안 보여도 MALICIOUS(두 문장을 인용할 수 있을 때만) + 가짜 권위·수정 금지 신호 + `[REDACTED…]`·자르기 표시는 신호 아님 + 근거는 글자 그대로 | dev100 회색 지대 20개 읽기, `docs/stage2-log.md` 10-26. v1은 폐기 |
 | 인젝션 방어 | `<<<SKILL_MD_BEGIN>>>` 구분자, 안의 지시 무시, 판정 조작 시도는 악성 신호 | R2 A5, C7 조건 A (Spotlighting delimiting) |
 | 모델 | `claude-haiku-4-5`(Vercel 이름 `anthropic/claude-haiku-4.5`), temperature 0 | R2 C4, C5. 경로는 Vercel (2026-10-24, Anthropic 키 없음) |
-| 파싱 실패·거부 | SUSPICIOUS 0.4 (fail-closed), details에 표시. 답이 512토큰에서 끊긴 경우는 `cut_off`로 따로 표시 | R2 C3, 리뷰(세훈) |
+| 파싱 실패·거부 | 점수 2/3(`FAIL_SCORE`, 문턱 후보 0.5와 2/3 모두에서 걸림), details에 `parse_error`·`refused`로 표시. 답이 512토큰에서 끊긴 경우는 `cut_off`로 따로 표시 | R2 C3, 리뷰(세훈). 2026-10-27 전에는 SUSPICIOUS 0.4 → 점수 0.467이라 문턱 0.5 아래, 즉 안전으로 처리됐음 |
 | 근거 검사 | 원문에 없는 인용은 버리고 개수를 기록 | R2 C3 |
 | 입력에서 뺀 것 | `benchmark_id`, `source_id`, 스킬 폴더 이름 | 라벨 누출 방지 (R2 C1-5) |
 | Jev 질문 | jev-skillbench의 is_malicious, attack_vector, harm_severity | 기존 결과를 다른 데이터에서 재현 |
 
 ## 아직 안 한 것
 
-- dev100 첫 정식 판정은 끝남(2026-10-24, `docs/stage2-log.md`). 다음: 정상 오탐 7개·셋 다 놓친 1개 읽기, 형식 오류와 근거 인용 탈락 원인 확인
+- 프롬프트 v2를 dev100 3회로 기록, 문턱과 실패 점수 결정(실패 0.467이 문턱 아래인 문제), dev 전체 1회(동결 직전)
 - 결과 캐시(SQLite, R2 C6), 3회 반복 실행과 흔들림 집계, Spotlighting B 조건 (2주차 이후)
 - 점수 문턱 θ와 거부 처리 규칙 확정 (4주차)
