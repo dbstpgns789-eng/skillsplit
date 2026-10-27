@@ -103,8 +103,11 @@ python -m skillsplit.stage2.jev_judge data/dev100 --out runs/stage2_jev_v0_dev10
 3회 결과를 모아 성능·흔들림·비용·정적과의 네 칸을 보려면(정적 결과 파일은 1단계 `scan`으로 만든다):
 
 ```bash
-python -m skillsplit.stage2.summarize_runs data/dev100_labels.csv runs/stage1_v0_dev100.jsonl
+python -m skillsplit.stage2.summarize_runs data/dev100_labels.csv runs/stage1_v0_dev100.jsonl --llm v2
+python -m skillsplit.stage2.summarize_runs data/devcheck100_labels.csv runs/stage1_v0_devcheck100.jsonl --data devcheck100 --llm v2
 ```
+
+있는 회차만 읽고(1회도 됨), 걸림 기준 0.5와 2/3을 나란히, 출처별 숫자도 함께 낸다.
 
 ### 3회 반복
 
