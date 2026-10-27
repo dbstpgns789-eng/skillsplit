@@ -98,6 +98,8 @@ python -m skillsplit.stage2.jev_judge data/dev100 --out runs/stage2_jev_v0_dev10
 
 중간에 끊겨도 같은 `--out`으로 다시 돌리면 이미 끝난 스킬은 건너뛴다.
 
+판정 실패 처리 (LLM·Jev 같은 규칙): 끝까지 판정하지 못한 스킬은 점수 2/3으로 결과 파일에 쓰고("걸림"), details에 실패를 표시한다. LLM은 `parse_error`·`refused`·`cut_off`, Jev는 `failed`·`error`. Jev는 일시적 오류(429, 5xx, 연결·시간 초과)를 5·15·45초 기다리며 3번까지 다시 보내고, 4xx나 답 모양이 다른 경우는 바로 실패로 친다. 실패한 스킬도 결과 줄이 있으므로 다시 돌려도 건너뛴다. 다시 판정하려면 그 줄을 결과 파일과 details에서 지운다. 보고할 때는 실패 건수를 따로 적고, 실패한 스킬은 원래 답(`raw_if_failed`, `error`)을 직접 확인한다.
+
 3회 결과를 모아 성능·흔들림·비용·정적과의 네 칸을 보려면(정적 결과 파일은 1단계 `scan`으로 만든다):
 
 ```bash

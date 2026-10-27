@@ -69,7 +69,7 @@ def main():
             print(f"비용 ${usd:.3f} (300건)  형식 오류 {sum(x['parse_error'] for x in rows)}  거부 {sum(x['refused'] for x in rows)}"
                   f"  답 끊김 {sum(x['cut_off'] for x in rows)}  근거 인용 버림 {dropped}/{dropped + kept}")
         else:
-            print(f"비용 ${sum(x['cost_usd'] for x in rows):.4f} (300건)")
+            print(f"비용 ${sum(x['cost_usd'] for x in rows):.4f} (300건)  실패 {sum(x.get('failed', False) for x in rows)}")
 
         cells = {"둘 다": 0, "정적만": 0, "판정기만": 0, "둘 다 놓침": 0}
         for i in mal:
