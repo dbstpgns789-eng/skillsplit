@@ -32,6 +32,10 @@ VIA = {
     "openrouter": ("https://openrouter.ai/api/alpha/decisions", "~typesafe/jev-latest", "OPENROUTER_API_KEY"),
 }
 USD_PER_INPUT_TOKEN = 0.042 / 1_000_000  # Jev는 입력 100만 토큰당 $0.042, 출력 무료
+# 끝까지 실패한 스킬의 점수. llm_judge.FAIL_SCORE와 같은 규칙: 실패를 안전으로 넘기지 않는다.
+# 예전에는 실패하면 결과 줄을 쓰지 않아 스킬이 결과 파일에서 빠졌다.
+FAIL_SCORE = 2 / 3
+RETRY_WAITS = (5, 15, 45)  # 일시적 오류(429, 5xx, 연결·시간 초과)를 다시 보내기 전에 기다리는 초
 
 
 def make_state(text):
@@ -46,6 +50,27 @@ def call_jev(url, model, key, text):
         "Authorization": f"Bearer {key}", "Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=90) as r:
         return json.loads(r.read().decode("utf-8"))
+
+
+def ask_jev(url, model, key, text):
+    """(payload, 오류 문자열). 일시적 오류는 기다렸다가 최대 3번 다시 보낸다.
+    다시 보내도 같을 오류(4xx, 답 모양이 다름)는 바로 실패로 돌려준다."""
+    for wait in RETRY_WAITS + (None,):
+        try:
+            payload = call_jev(url, model, key, text)
+            float(payload["answers"]["is_malicious"]["noul"])  # 점수로 쓸 답이 있는지 확인
+            return payload, None
+        except urllib.error.HTTPError as e:
+            error = f"HTTP {e.code}: {e.read()[:200]!r}"
+            if e.code != 429 and e.code < 500:
+                return None, error
+        except (urllib.error.URLError, TimeoutError) as e:
+            error = f"{type(e).__name__}: {e}"
+        except (KeyError, TypeError, ValueError) as e:
+            return None, f"답 모양이 다름: {e!r}"
+        if wait is None:
+            return None, error
+        time.sleep(wait)
 
 
 def main():
@@ -71,11 +96,16 @@ def main():
         skill_id, original = read_skill(folder)
         text, omitted = truncate(original)
         t0 = time.time()
-        try:
-            payload = call_jev(url, model, key, text)
-        except urllib.error.HTTPError as e:
-            print(f"[{i}/{len(folders)}] {skill_id} HTTP {e.code}: {e.read()[:200]!r}")
-            continue  # 결과를 쓰지 않으므로 다시 돌리면 이 스킬부터 이어서 한다
+        payload, error = ask_jev(url, model, key, text)
+        if error:
+            write_result(args.out, skill_id, FAIL_SCORE, [f"jev_failed: {error[:100]}"])
+            append_jsonl(details_path, {
+                "skill_id": skill_id, "questions_version": QUESTIONS_VERSION, "via": args.via, "model": model,
+                "failed": True, "error": error, "prob_malicious": None, "omitted_chars": omitted,
+                "cost_usd": 0, "seconds": round(time.time() - t0, 2),
+            })
+            print(f"[{i}/{len(folders)}] {skill_id} FAILED {error[:100]}")
+            continue
         answers = payload.get("answers", {})
         prob = float(answers["is_malicious"]["noul"])
         vector = answers.get("attack_vector", {})
@@ -87,7 +117,7 @@ def main():
         usage = payload.get("usage") or {}
         append_jsonl(details_path, {
             "skill_id": skill_id, "questions_version": QUESTIONS_VERSION, "via": args.via,
-            "model": payload.get("model", model), "prob_malicious": prob,
+            "model": payload.get("model", model), "failed": False, "prob_malicious": prob,
             "attack_vector": vector.get("choice"), "vector_probs": vector.get("probabilities"),
             "harm_severity": severity.get("score"), "omitted_chars": omitted,
             "input_tokens": usage.get("input_tokens"),
