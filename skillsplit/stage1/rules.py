@@ -20,14 +20,16 @@ def _r(id, severity, scope, pattern, requires=(), source="skillsplit"):
 
 
 # 산문 HIGH 규칙. CONCEAL은 이 중 하나가 함께 걸려야 발동한다.
-PROSE_HIGH = ("RUN_DIRECTIVE", "PROMPT_LEAK", "OVERRIDE", "LURE")
+PROSE_HIGH = ("RUN_CMD", "RUN_INIT", "PROMPT_LEAK", "OVERRIDE", "LURE")
 
 RULES = [
     # --- 산문 규칙 (README §2.1). E2 signals.py, E3 src001_signals.py에서 옮기고, E4 유형은 새로 씀 ---
-    _r("RUN_DIRECTIVE", "HIGH", "prose",
+    # 로컬 스크립트 실행 요구. v0의 RUN_DIRECTIVE를 출처를 따로 세려고 둘로 나눔(정규식은 그대로): CMD = E2 run_directive, INIT = E3 init_directive
+    _r("RUN_CMD", "HIGH", "prose",
        r"(?:must|always|first|before|required|pre-?flight|prerequisite|initiali[sz]\w*)[^\n]{0,120}`(?:python3?|bash|sh|node|pwsh|powershell)\s+[\w./~-]+`"
-       r"|`(?:python3?|bash|sh|node|pwsh|powershell)\s+[\w./~-]+`[^\n]{0,120}(?:must|always|first|before|required|pre-?flight|prerequisite)"
-       r"|(?:run|execute)\s+(?:the|this)\s+(?:following\s+)?initiali[sz]ation\s+(?:script|step|code|routine)"
+       r"|`(?:python3?|bash|sh|node|pwsh|powershell)\s+[\w./~-]+`[^\n]{0,120}(?:must|always|first|before|required|pre-?flight|prerequisite)"),
+    _r("RUN_INIT", "HIGH", "prose",
+       r"(?:run|execute)\s+(?:the|this)\s+(?:following\s+)?initiali[sz]ation\s+(?:script|step|code|routine)"
        r"|initiali[sz]ation\s+(?:script|step|routine)\s+(?:should|must)\s+be\s+(?:executed|run)"
        r"|(?:before|prior to)\s+(?:beginning|starting|any)\b[^\n]{0,60}initiali[sz]"),
     _r("PROMPT_LEAK", "HIGH", "prose",
