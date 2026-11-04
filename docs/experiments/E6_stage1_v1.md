@@ -5,9 +5,10 @@
 ## 0. 한 줄 결론
 
 - **dev는 규칙 설계에 쓴 데이터다.** 글 규칙은 dev에서 기존 도구가 놓친 사례(E2~E4)를 보고 만들었고, v1 조정도 dev 정상 오탐을 보고 했다. 아래 수치는 모두 v1에 유리하다. 공정한 비교는 5주차 test에서 한다.
-- **주 지표는 재현율과 오탐률이다.** 정적은 안 걸리면 0점이라, 아무것도 못 잡아도 PR-AUC가 악성 비율만큼 나온다(dev 전체 0.798, dev100 0.500). PR-AUC는 같은 데이터에서 다른 탐지기와 비교할 때만 쓴다.
+- **주 지표는 재현율과 오탐률이다.** 정적은 안 걸리면 0점이라, 아무것도 못 잡아도 PR-AUC가 악성 비율만큼 나온다(dev 전체 0.798, dev100 0.500). PR-AUC는 같은 데이터에서 다른 탐지기와 비교할 때만 쓴다(예: dev100에서 정적 0.820, LLM 0.961, Jev 0.939).
 - dev 전체(8,348): **재현율 0.549(v0와 같음), 정상 오탐률 0.008(13/1,690, v0 21개)**. PR-AUC 0.907.
 - **출처 쏠림을 빼면 재현율은 0.160이다.** 최다 출처 비중이 90% 이상인 규칙 9개를 빼고 잰 값이다. v0 재현율의 대부분은 SRC010·SRC001의 문장 틀에 맞춘 규칙에서 나온다(§2, §3).
+- **스크립트형 제외 재현율은 0.519다(악성 2,168개).** 스크립트형은 SKILL.md 말고 동봉 코드 파일이 하나라도 있는 악성으로 정했다(§8). 빼면 오히려 낮아지는데, 글에 "스크립트를 먼저 실행하라"고 쓴 SRC010 악성이 대부분 함께 빠지기 때문이다.
 - dev100: 재현율 0.640, 오탐률 0.000(0/50). 점수는 v0와 100개 모두 같다.
 - v0에서 바꾼 것: RUN_DIRECTIVE를 RUN_CMD·RUN_INIT로 나눔(정규식 그대로), CRED_PATH에 자기 키를 쓰는 줄 예외, 채택 기준 2에 최다 출처 비중 상한. AST(v1 계획)와 SkillGate 규칙 추가는 재 보고 하지 않았다(§5, §6).
 
@@ -126,17 +127,56 @@ PERSISTENCE 6개 중 1개에는 DESC_BYPASS도 함께 걸렸다(결합 전용이
 
 ## 7. 동결 규칙 목록
 
-규칙 17개(`31333de`): RUN_CMD, RUN_INIT, PROMPT_LEAK, OVERRIDE, LURE, HOMOGLYPH, RECON_DUMP, HIDDEN_DIRECTIVE, PERSONA_LOCK, CONCEAL(결합 전용), DESC_BYPASS(결합 전용), PIPE_TO_SHELL, DECODE_EXEC, REMOTE_EXEC, CRED_PATH(예외 있음), EXFIL_SEND, PERSISTENCE. 가중치 CRITICAL 0.9, HIGH 0.7, MEDIUM 0.4, LOW 0.2. 5주차 test 평가는 이 목록으로 하고, test 결과를 보고 규칙을 바꾸지 않는다.
+규칙 17개(`31333de`): RUN_CMD, RUN_INIT, PROMPT_LEAK, OVERRIDE, LURE, HOMOGLYPH, RECON_DUMP, HIDDEN_DIRECTIVE, PERSONA_LOCK, CONCEAL(결합 전용), DESC_BYPASS(결합 전용), PIPE_TO_SHELL, DECODE_EXEC, REMOTE_EXEC, CRED_PATH(예외 있음), EXFIL_SEND, PERSISTENCE. 가중치 CRITICAL 0.9, HIGH 0.7, MEDIUM 0.4, LOW 0.2.
 
-"스크립트에만 공격"(E4 약 20%)의 평가 처리는 윤세훈 님이 정해 공지하기로 했다(PR #4 리뷰). 탐지기 쪽은 바꾸지 않는다.
+- 걸림 기준은 **score > 0**으로 고정한다(2026-10-12 결정 그대로). test 전에 바꾸지 않는다.
+- 4주차 끝에 동결한다. test는 윤세훈 님이 1회 돌리고, test 결과를 보고 규칙·기준을 바꾸지 않는다.
+- 재현율은 "전체"와 "스크립트형 제외" 두 가지로 보고한다(§8).
 
-## 8. 재현
+## 8. 스크립트형 기준 (회의 결론 1번)
+
+**정의**: 악성 샘플 중, 패키지에 SKILL.md 말고 코드 파일이 하나라도 있으면 스크립트형이다. 코드 파일은 확장자(`.py .sh .js .ts .ps1 .bat .rb .pl .php .go .lua .pyc` 등) 또는 첫 줄 `#!`로 판정한다(`data/script_type.py`). 스크립트형을 뺀 나머지는 공격이 SKILL.md 글에 있을 수밖에 없는 샘플이다.
+
+정의 뒷부분인 "글에는 공격이 없음"은 자동으로 판정할 방법이 없다. 탐지기로 판정하면 "놓친 것을 빼고 잰 재현율"이 되어 순환이 된다. 그래서 동봉 파일 정보만 쓰고, 탐지기 결과는 보지 않고 정했다. 후보는 E4 손 판정 50개에 대조했다.
+
+| 후보 | dev 악성 중 | E4 script_only 걸러냄 | E4 text_attack 같이 빠짐 |
+|---|---:|---:|---:|
+| **동봉 코드 있음 (채택)** | 4,490 (67%) | 10/10 | 9/37 |
+| SKILL.md가 이름을 부르는 코드 있음 | 4,276 (64%) | 10/10 | 9/37 |
+| 코드에 네트워크 + (실행·인코딩·비밀·지속성) 키워드 | 2,053 (31%) | 6/10 | 6/37 |
+| 코드에 위험 키워드 묶음 3개 이상 | 1,220 (18%) | 2/10 | 4/37 |
+
+- 고른 이유: 남는 집합에 스크립트형이 섞이지 않아야, 거기서 놓친 것이 진짜 탐지기가 놓친 것이 된다. 키워드 후보는 E4 script_only를 4개 이상 남긴다. "이름을 부름"은 결과가 같지만 가정이 하나 더 들어간다.
+- 비용: 글에 공격이 있는 악성도 같이 빠진다. 출처별 스크립트형 수는 SRC010 2,596/2,783, SRC001 1,721/3,418, SRC006 64/86, SRC013 69/154, SRC002 21/153, SRC004 18/33, SRC005 0/30이다.
+- test에는 같은 스크립트를 그 출처 압축 파일로 그대로 돌린다. 압축 안 구조가 출처마다 달라서, 파일을 샘플에 붙일 때는 매니페스트의 `package_relative_path`를 쓴다.
+
+| 조건 | 악성 n | 재현율 | 오탐률 |
+|---|---:|---:|---:|
+| 전체 | 6,658 | 0.549 | 0.008 (13/1,690) |
+| 스크립트형 제외 | 2,168 | 0.519 | 0.008 (13/1,690) |
+
+| 출처 (스크립트형 제외) | 악성 n | 재현율 |
+|---|---:|---:|
+| SRC001 | 1,697 | 0.526 |
+| SRC002 | 132 | 0.659 |
+| SRC004 | 15 | 0.133 |
+| SRC005 | 30 | 0.100 |
+| SRC006 | 22 | 0.091 |
+| SRC010 | 187 | 0.722 |
+| SRC013 | 85 | 0.047 |
+
+정상은 동봉 파일 기록이 없고 빼지 않으므로 오탐률은 그대로다. AI 판정기도 같은 `runs_dev/script_type.csv`로 나누면 두 탐지기의 숫자를 같은 집합에서 비교할 수 있다.
+
+## 9. 재현
 
 ```
 python -m pytest tests/test_stage1.py
 python -m skillsplit.stage1.scan data/dev100 --out runs/stage1_v1_dev100.jsonl
 python -m skillsplit.stage1.scan data/dev_skills --out runs/stage1_v1_dev.jsonl
-cd data && python s1_rule_report.py      # runs_dev/s1_v1_rules.csv, runs_dev/s1_v1_samples.csv
+cd data
+# 패키지 압축 8개(SRC001·002·004·005·006·008·010·013)를 MaliciousSkillBench packages/에서 받아 SHA256SUMS.txt로 확인. 풀지 않는다
+python -I script_type.py runs_dev/scores.csv runs_dev/script_type.csv   # §8
+python s1_rule_report.py      # runs_dev/s1_v1_rules.csv, runs_dev/s1_v1_samples.csv
 ```
 
 §3·§4·§5·§6의 갈래별·형태별 집계는 일회성 확인이라 스크립트로 남기지 않았다(원문은 출력하지 않고 개수와 정상 샘플의 걸린 줄만 봄).
