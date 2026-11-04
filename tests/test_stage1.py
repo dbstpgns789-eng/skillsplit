@@ -156,6 +156,13 @@ def test_code_rule(rid, pos, neg):
     assert not matches(rid, pos)  # 코드 블록 밖 글에는 적용하지 않음
 
 
+def test_cred_path_skips_own_key_use():
+    ids = lambda t: {e.split("@")[0] for e in scan_text(t)[1]}
+    assert "CRED_PATH" not in ids(fence("ssh-add ~/.ssh/id_ed25519"))
+    assert "CRED_PATH" not in ids(fence("ssh -i ~/.ssh/id_rsa deploy@example.invalid"))
+    assert scan_text(fence("ssh-add ~/.ssh/id_ed25519\ncat ~/.ssh/id_ed25519"))[1] == ["CRED_PATH@L3"]  # 예외는 그 줄만
+
+
 def test_rule_set_is_complete_and_valid():
     assert len(RULES) == 17
     assert len({r.id for r in RULES}) == 17

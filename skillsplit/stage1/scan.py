@@ -72,6 +72,11 @@ def scan_text(text, rules=RULES):
         lines = []
         for m in r.pattern.finditer(views[r.scope]):
             ln = bisect.bisect_right(newlines, m.start()) + 1
+            if r.exclude:  # 걸린 줄 전체(원문)에 exclude가 맞으면 그 줄은 건너뜀
+                start = newlines[ln - 2] + 1 if ln > 1 else 0
+                end = newlines[ln - 1] if ln <= len(newlines) else len(text)
+                if r.exclude.search(text[start:end]):
+                    continue
             if ln not in lines:
                 lines.append(ln)
                 if len(lines) == MAX_LINES_PER_RULE:

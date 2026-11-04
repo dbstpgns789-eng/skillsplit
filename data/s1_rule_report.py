@@ -13,6 +13,7 @@ from skillsplit.stage2.common import read_skill
 
 MIN_SOURCE_HITS = 3   # 출처 하나로 셀 최소 악성 적중 수
 MAX_BENIGN_RATE = 0.01
+MAX_TOP_SHARE = 0.9    # 악성 적중의 이 비율 이상이 한 출처면 출처 편향 (4주차 추가, E6)
 MAX_FPR = 0.02
 TAG = "v1"  # 출력 파일 이름. v0 결과(E5)는 커밋 aaa35f7에서 TAG 없이 s1_v0_*
 
@@ -57,11 +58,12 @@ def main():
         src = mh.source_id.value_counts()
         n_src = int((src >= MIN_SOURCE_HITS).sum())
         ben_rate = len(bh) / (d.label == 0).sum()
+        top_share = src.iloc[0] / len(mh) if len(mh) else 0
         status = ("결합 전용/제외 검토" if ben_rate > MAX_BENIGN_RATE and not r.requires
-                  else "채택" if n_src >= 2 else "출처 편향")
+                  else "채택" if n_src >= 2 and top_share < MAX_TOP_SHARE else "출처 편향")
         rows.append({"rule": r.id, "severity": r.severity, "mal_hits": len(mh), "ben_hits": len(bh),
                      "ben_rate": round(ben_rate, 4), "n_sources": n_src,
-                     "top_source": f"{src.index[0]} {src.iloc[0] / len(mh):.0%}" if len(mh) else "",
+                     "top_source": f"{src.index[0]} {top_share:.0%}" if len(mh) else "",
                      "new_vs_baselines": int(((mh.cisco_any == 0) & (mh.skillgate == 0)).sum()), "status": status})
     R = pd.DataFrame(rows)
     R.to_csv(f"runs_dev/s1_{TAG}_rules.csv", index=False)
@@ -70,8 +72,8 @@ def main():
     print("\n== 전체")
     summary(d, "dev 전체, 규칙 전부")
     biased = set(R[R.status == "출처 편향"].rule)
-    if biased:
-        summary(run(m, [r for r in RULES if r.id not in biased]), f"dev 전체, 출처 편향 제외 {sorted(biased)}")
+    nb = run(m, [r for r in RULES if r.id not in biased])
+    summary(nb, f"dev 전체, 출처 편향 제외 {sorted(biased)}")
     in100 = d.benchmark_id.isin(pd.read_csv("dev100_labels.csv").benchmark_id)
     summary(d[in100], "dev100")
     eq = d.rules.fillna("").apply(equal_weight_score)
@@ -81,7 +83,8 @@ def main():
     print(f"오탐률 기준 {MAX_FPR:.0%}: {'통과' if fpr <= MAX_FPR else '초과 → 정밀도 낮은 규칙부터 뺀다'}")
 
     print("\n== 출처별 악성 재현율")
-    print(d[d.label == 1].groupby("source_id").score.agg(n="count", recall=lambda s: round((s > 0).mean(), 3)).to_string())
+    rec = lambda x: x[x.label == 1].groupby("source_id").score.agg(n="count", recall=lambda s: round((s > 0).mean(), 3))
+    print(rec(d).join(rec(nb).recall.rename("recall_편향제외")).to_string())
 
     print("\n== Cisco(기본)와 네 칸 (악성)")
     a, c = d.score > 0, d.cisco_any == 1

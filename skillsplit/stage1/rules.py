@@ -13,10 +13,12 @@ class Rule:
     pattern: re.Pattern
     requires: tuple = ()   # 결합 전용: 이 중 하나가 함께 걸려야 발동. ("*",)는 결합 전용이 아닌 규칙 아무거나
     source: str = "skillsplit"
+    exclude: re.Pattern = None  # 걸린 줄이 이것에 맞으면 그 줄은 셈하지 않음
 
 
-def _r(id, severity, scope, pattern, requires=(), source="skillsplit"):
-    return Rule(id, severity, scope, re.compile(pattern, re.I), tuple(requires), source)
+def _r(id, severity, scope, pattern, requires=(), source="skillsplit", exclude=None):
+    return Rule(id, severity, scope, re.compile(pattern, re.I), tuple(requires), source,
+                re.compile(exclude, re.I) if exclude else None)
 
 
 # 산문 HIGH 규칙. CONCEAL은 이 중 하나가 함께 걸려야 발동한다.
@@ -81,7 +83,8 @@ RULES = [
     _r("CRED_PATH", "HIGH", "code",
        r"[/\\]\.ssh[/\\](?:id_\w+|authorized_keys)|\.aws[/\\]credentials|Library/Keychains|\bsecurity\s+(?:dump-keychain|find-generic-password)\b"
        r"|\.git-credentials|\bLogin Data\b",
-       source="SkillGate CRED001-019 (MIT) 참고"),
+       source="SkillGate CRED001-019 (MIT) 참고",
+       exclude=r"^\s*(?:ssh-add|ssh-keygen|ssh\s+-i)\b"),  # 자기 키를 쓰는 줄. dev 정상 오탐 8개가 모두 ssh-add (E6)
     _r("EXFIL_SEND", "HIGH", "code",
        r"\bcurl\b[^\n]{0,200}(?:\s-d\s*@|--data(?:-binary)?\s*@|\s-F\s*['\"]?\w+=@|--upload-file)"
        r"|\bwget\b[^\n]{0,200}--post-file|\b(?:nc|ncat|netcat)\b[^\n]{0,60}\d{2,5}\s*<"
