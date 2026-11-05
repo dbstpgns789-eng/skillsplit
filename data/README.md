@@ -34,5 +34,7 @@ python sample.py          # 공부용에서 100개 뽑기 → dev100/ 폴더 + d
 | `src001_signals.py`, `src001_profile.py`, `src001_ngrams.py` | SRC001에서 두 도구가 놓친 악성 분석(E3). `package_manifest.csv` 필요. 원문 출력 없음 |
 | `e4_diff.py`, `e4_excerpt.py` | E3의 남은 539개가 공격인지 라벨 문제인지 판정(E4). 비교 결과와 URL·명령을 가린 200자 발췌만 출력 |
 | `s1_rule_report.py` | 정적 탐지기를 dev 전체에 돌려 규칙별 정상 적중률·출처 수·최다 출처 비중과 전체 수치를 냄(E5 v0, E6 v1). 원문 출력 없음 |
-| `script_type.py` | 악성마다 동봉 코드 파일이 있는지(스크립트형) 판정 → 재현율을 전체·스크립트형 제외로 나눠 보고(E6 §8). 패키지 압축(`<SRC>_packages.tar.gz`)과 `package_manifest.csv` 필요, 압축은 풀지 않음. `python -I script_type.py runs_dev/scores.csv runs_dev/script_type.csv` |
+| `script_only.py` | script-only 판정 1단계: 악성마다 동봉 코드에서 공격 동작 근거를 `파일:줄:동작`으로 남김(E6 §8). 패키지 압축(`<SRC>_packages.tar.gz`)과 `package_manifest.csv` 필요, 압축은 풀지 않음 |
+| `s1_eval.py` | 정적 결과 집계(dev·test 공용): 파일 수·sha256·누락·중복 확인, 재현율·오탐률 분자/분모, 출처별, script-only 제외 |
+| `run_template.py`, `case_excerpt.py` | RUN 규칙 반복 틀 세기(E6 §3), 사례 판정용 가린 발췌(E6 §5). 원문 출력 없음 |
 | `make_test.py`, `count_cisco.py` | 대표가 Cisco 기준선 돌릴 때 쓰는 것. 팀원은 안 써도 됨 |

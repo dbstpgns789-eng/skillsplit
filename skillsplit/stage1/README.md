@@ -12,6 +12,10 @@ skillsplit/stage1/
   scan.py     SKILL.md → 영역 나누기 → 규칙 적용 → 점수 → jsonl 출력
 data/
   s1_rule_report.py   dev에서 규칙별 집계 → 채택 판단
+  s1_eval.py          입력 확인(파일 수·sha256) + 재현율·오탐률 분자/분모, 출처별, script-only 제외 (dev·test 공용)
+  run_template.py     RUN_CMD·RUN_INIT 걸린 줄의 반복 틀 세기 (E6 §3)
+  script_only.py      script-only 판정 1단계: 동봉 코드의 공격 동작 근거 (E6 §8)
+  case_excerpt.py     사례 판정용 가린 발췌 (E6 §5)
 tests/
   test_stage1.py      규칙·영역·점수·안전장치 테스트
 ```
@@ -34,7 +38,7 @@ tests/
 |---|---|---|---|---|
 | RUN_CMD | HIGH | prose | 로컬 스크립트 실행 명령(`` `python x` ``)을 필수·선행 단계로 요구 | 기존 (E2 `signals.py` run_directive) |
 | RUN_INIT | HIGH | prose | "초기화 스크립트·단계"를 먼저 실행하라고 요구 | 기존 (E3 `src001_signals.py` init_directive) |
-| PROMPT_LEAK | HIGH | prose | 시작 때 받은 지시문·시스템 프롬프트를 출력·전사하라 | 기존 (E3 `src001_signals.py` prompt_leak), 넓힐 예정 |
+| PROMPT_LEAK | HIGH | prose | 시작 때 받은 지시문·시스템 프롬프트를 출력·전사하라 | 기존 (E3 `src001_signals.py` prompt_leak). 넓히지 않음 |
 | OVERRIDE | HIGH | prose | 이전 지침·안전 장치를 무효로 하라, 제한 없이 동작하라 | 새로 작성 (E4 유형) |
 | LURE | HIGH | prose | 비밀번호 걸린 압축 파일, 붙여넣기 사이트, 터미널에 붙여넣기 | 기존 (E2 `signals.py` lure) |
 | HOMOGLYPH | HIGH | all | 한 단어 안에 라틴 + 키릴·그리스 문자 | 기존 (E2 `signals.py` homoglyph) |
@@ -72,7 +76,7 @@ tests/
 - 가중치 값(0.9/0.7/0.4/0.2)은 따로 근거 없이 정한 값이다. 모두 0.7로 같게 해도 dev 전체 PR-AUC는 v0 0.9064 → 0.9061, v1 0.9072 → 0.9070이고 dev100은 0.820 그대로다(`s1_rule_report.py`). v0에서 걸린 샘플 3,674개 중 정상이 21개뿐이라, 걸린 샘플끼리의 순서가 PR-AUC를 거의 바꾸지 않는다.
 - 결합 전용 규칙은 짝이 걸렸을 때만 점수와 evidence에 들어간다.
 - evidence는 `"RULE@L줄번호"`, 심각도 높은 순 → 줄 순. 규칙마다 최대 3줄.
-- 네 칸 분해의 "걸림"은 score > 0 (2026-10-12 결정).
+- **걸림 기준은 score > 0**이다(2026-10-12 결정, 동결 때 유지). 발동한 규칙이 하나라도 있으면 걸림이고, 결합 전용 규칙은 짝이 있어야 발동한다. 가중치가 쌓여야 걸리는 구조가 아니다. 가중치는 모두 양수라 값을 바꿔도 걸림 여부(재현율·오탐률)는 바뀌지 않고, 걸린 샘플끼리의 순서(PR-AUC)만 바뀐다.
 
 ### 3.2 SKILL.md 나누기
 
@@ -91,7 +95,7 @@ tests/
 | 인코딩 | `stage2/common.read_skill` 그대로 | 2단계와 같은 입력 |
 | 빈 SKILL.md | score 0, details `empty=true` | |
 
-zero-width 문자 제거나 유니코드 정규화는 v0에서 하지 않는다.
+zero-width 문자 제거나 유니코드 정규화는 하지 않는다(v1도 같음).
 
 ## 4. 규칙 채택 절차 (`data/s1_rule_report.py`)
 
@@ -105,7 +109,7 @@ zero-width 문자 제거나 유니코드 정규화는 v0에서 하지 않는다.
 2. 악성 출처 ≥ 2개(각 3건 이상) **그리고** 최다 출처 비중 < 90% → 채택. 아니면 "출처 편향" 표시를 달고 채택하며, 재현율을 편향 규칙 포함·제외 두 가지로 보고한다. 비중 상한은 4주차에 더했다. dev 악성의 93%가 SRC001·SRC010이라 출처 수만으로는 한 출처에 맞춘 규칙이 걸러지지 않았다(E6 §3).
 3. 전체: dev 정상 오탐률(score > 0) ≤ 2%. 넘으면 정밀도가 가장 낮은 규칙부터 뺀다.
 
-보고 지표: score > 0 기준 재현율·오탐률(주 지표), 재현율은 전체와 스크립트형 제외(`data/script_type.py`, E6 §8) 두 가지, 출처별 재현율, Cisco와의 네 칸, dev100 수치. PR-AUC는 같은 데이터에서 다른 탐지기와 비교할 때만 쓴다. 정적은 안 걸리면 0점이라, 아무것도 못 잡아도 PR-AUC가 악성 비율만큼 나오기 때문이다(PR #4 리뷰). 결과는 `docs/experiments/E5_stage1_v0.md`(v0), `E6_stage1_v1.md`(v1). 동결 때 채택 규칙 목록을 `docs/decisions.md`에 한 줄로 남긴다.
+보고 지표: score > 0 기준 재현율·오탐률(주 지표), 재현율은 전체와 script-only 제외(기준은 E6 §8 초안, 세훈 님과 확정) 두 가지, 출처별 재현율, Cisco와의 네 칸, dev100 수치. PR-AUC는 같은 데이터에서 다른 탐지기와 비교할 때만 쓴다. 정적은 안 걸리면 0점이라, 아무것도 못 잡아도 PR-AUC가 악성 비율만큼 나오기 때문이다(PR #4 리뷰). 결과는 `docs/experiments/E5_stage1_v0.md`(v0), `E6_stage1_v1.md`(v1), 동결 자료는 `docs/stage1_freeze.md`. 동결 때 채택 규칙 목록을 `docs/decisions.md`에 한 줄로 남긴다.
 
 ## 5. 테스트 (`tests/test_stage1.py`, pytest)
 
