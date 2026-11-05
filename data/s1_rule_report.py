@@ -1,5 +1,5 @@
-# 정적 탐지기 v0 규칙 채택 보고서 (skillsplit/stage1/README.md §4). dev 전체에 돌려 규칙별·전체 수치를 낸다. 원문은 출력하지 않는다.
-# 필요: dev_skills/(make_dev.py), runs_dev/scores.csv(E1), dev100_labels.csv(sample.py), runs_dev/script_type.csv(script_type.py)
+# 정적 탐지기 규칙 채택 보고서 (skillsplit/stage1/README.md §4). dev 전체에 돌려 규칙별·전체 수치를 낸다. 원문은 출력하지 않는다.
+# 필요: dev_skills/(make_dev.py), runs_dev/scores.csv(E1), dev100_labels.csv(sample.py)
 # 사용: cd data && python s1_rule_report.py → runs_dev/s1_{TAG}_rules.csv, runs_dev/s1_{TAG}_samples.csv
 import sys
 from pathlib import Path
@@ -85,12 +85,6 @@ def main():
     print("\n== 출처별 악성 재현율")
     rec = lambda x: x[x.label == 1].groupby("source_id").score.agg(n="count", recall=lambda s: round((s > 0).mean(), 3))
     print(rec(d).join(rec(nb).recall.rename("recall_편향제외")).to_string())
-
-    print("\n== 스크립트형 제외 (동봉 코드가 있는 악성을 뺌, script_type.py)")
-    st = d.merge(pd.read_csv("runs_dev/script_type.csv")[["benchmark_id", "script_type"]], on="benchmark_id", how="left")
-    st = st[(st.label == 0) | (st.script_type == 0)]
-    summary(st, "dev 전체, 스크립트형 제외")
-    print(rec(st).to_string())
 
     print("\n== Cisco(기본)와 네 칸 (악성)")
     a, c = d.score > 0, d.cisco_any == 1
