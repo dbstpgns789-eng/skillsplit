@@ -11,8 +11,11 @@
 | 규칙 17개 구현·테스트(pytest 40개) | 완료 | 탐지기 코드 `31333de` 이후 `rules.py`·`scan.py` 변경 없음 |
 | dev 전체·dev100 실행, 공통 형식 결과 | 완료 | `results/stage1/` |
 | PR #4 리뷰 1~4번(가중치, 비교 조건, PR-AUC 해석, RUN 분리) | 완료 | E6 §2·§3, E5 §0 |
-| 작은 출처 미탐 사례 판정 | 1차 완료 | 40개, 에이전트 1차 판정. **담당자 원문 대조 남음**(동결 전) |
-| script-only 기준 | 초안 | E6 §8. 세훈 님과 확정(동결 전) |
+| 작은 출처 미탐 사례 판정 | 1차 완료 | 40개, 에이전트 1차 판정. **담당자 원문 대조 남음**(11-08 동결 전) |
+| E4 script_only 10개 코드 근거 | 진행 중 | 7개는 `파일:줄` 근거 없음(E6 §8.3). 담당자 재판정 또는 unclear로(11-08 동결 전) |
+| script-only 기준 | 초안 | E6 §8. 세훈 님과 확정(11-08 동결 전). 못 정하면 미확정으로 두고 test는 전체 기준만 보고 |
+| 가중치 심각도 순서의 근거 | 진행 중 | 담당자가 적음(11-08 동결 전). 걸림 여부에는 영향 없음(§2 점수) |
+| test 예상(§6) 담당자 확정 | 진행 중 | 11-08 동결 전 |
 | test 집계 스크립트 | 완료 | `data/s1_eval.py` |
 | AST(tree-sitter-bash, Python `ast`) | 보류(넣지 않음) | dev 상한 6개(E6 §6). 후속 범위는 test 뒤 세훈 님과 정함 |
 | 동봉 스크립트 분석 탐지기 | 범위 밖 | 공지 5번대로 후속 작업 |
@@ -22,17 +25,19 @@
 | 항목 | 값 |
 |---|---|
 | 탐지기 코드 | `skillsplit/stage1/rules.py`, `scan.py` (커밋 `31333de`). 이 문서가 들어간 커밋에서도 같음 |
-| 환경 | Windows 11, Python 3.12.10. 탐지기는 표준 라이브러리만 씀. 집계는 `pandas`, 테스트는 `pytest` |
+| 환경 | Windows 11, Python 3.12.10. 탐지기는 표준 라이브러리만 씀. 집계는 `pandas` 3.0.6, 테스트는 `pytest` 9.1.1 |
 | 설치 | `python -m pip install pandas pytest` |
 | 입력 | 스킬 폴더 아래 `<benchmark_id>/SKILL.md`. SKILL.md만 읽고 동봉 파일은 읽지 않음. `stage2/common.read_skill`(UTF-8, 오류 문자는 대체)로 읽어 2단계와 같은 입력 |
 | 데이터 분할 | 공식 `source_disjoint.csv`. dev = train+validation 8,348 (악성 6,658 / 정상 1,690) |
+| 데이터 버전 | HF `ProtectSkills/MaliciousSkillBench` `primary`, 로컬 캐시 revision `d4b42ce5766a6e0359c987cf59c1007cb3795a90`(`get_data.py`는 revision을 지정하지 않아 받은 시점의 main). sha256: `skills.csv` `ee84513e…f4246cf1`, `source_disjoint.csv` `b39846be…a6a20b43`(전체 값은 `data/README.md`) |
+| ID 목록 | dev 8,348개·dev100 100개의 ID는 `results/stage1/*.jsonl`의 `skill_id`와 같음 |
 | 입력 확인 | `s1_eval.py`가 SKILL.md 파일 수, 정답과의 id 차이, `skills.csv` `skill_text`와의 sha256을 확인. dev 8,348개 모두 일치. 로컬 dev100 사본 100개는 줄바꿈만 CRLF(`read_text`가 LF로 읽어 탐지기 입력은 같음) |
 | 규칙 버전 | v1, 17개. 목록은 E6 §7 |
 | 입력 제한 | 200,000자 넘으면 details에 `oversize=true`, 앞 300,000자만 검사(`scanned_chars` 기록). dev에서 oversize 1개, 잘림 1개, 빈 SKILL.md 5개 |
 | 걸림 기준(문턱) | **score > 0** 유지. 발동한 규칙이 하나라도 있으면 걸림. 결합 전용 규칙(CONCEAL, DESC_BYPASS)은 짝이 있어야 발동. 가중치가 쌓여야 걸리는 구조가 아님 |
 | 점수 | 걸린 규칙의 가중치 noisy-OR(CRITICAL 0.9, HIGH 0.7, MEDIUM 0.4, LOW 0.2). PR-AUC용. 가중치가 모두 양수라 값을 바꿔도 걸림 여부는 바뀌지 않음 |
 | 실패 처리 | 정적은 실패가 없다(모든 스킬에 점수). 정규식 컴파일 실패는 import 때 오류. 20MB 한 줄을 5초 안에 처리하는 테스트 있음 |
-| 실행 날짜·횟수 | dev 전체·dev100 각 1회(2026-11-04). 결정적이라 반복해도 같음 |
+| 실행 날짜·횟수 | dev 전체·dev100 각 1회(2026-11-04). 2026-11-06에 다시 돌려 결과·details 파일이 바이트 단위로 같음을 확인(dev 전체 약 2분 35초) |
 
 ### 2.1 test 실행 순서 (세훈 님)
 
@@ -42,7 +47,8 @@ python -m pip install pandas pytest
 python -m pytest tests/test_stage1.py                                   # 40 passed
 python -m skillsplit.stage1.scan <test 스킬 폴더> --out runs/stage1_v1_test.jsonl
 cd data
-python s1_eval.py <test 스킬 폴더> ../runs/stage1_v1_test.jsonl <test 정답 csv: benchmark_id,label[,source_id]>
+python -X utf8 s1_eval.py <test 스킬 폴더> ../runs/stage1_v1_test.jsonl <test 정답 csv: benchmark_id,label[,source_id]>
+#   -X utf8: Windows 콘솔(cp949)에서 한글 출력이 깨지지 않게
 #   script-only 기준 확정 후: --script-only <판정 csv: benchmark_id,verdict>
 ```
 
@@ -64,9 +70,15 @@ python s1_eval.py <test 스킬 폴더> ../runs/stage1_v1_test.jsonl <test 정답
 | v1, 출처 편향 규칙 9개 제외 | 1,065/6,658 = 0.160 | 9/1,690 = 0.005 |
 | v1, 반복 틀 RUN 줄로만 잡힌 1,482개 제외 | 2,171/6,658 = 0.326 | 13/1,690 |
 | v0 | 3,653/6,658 = 0.549 | 21/1,690 = 0.012 |
-| Cisco 2.2.1 정적 (E1) | 2,063/6,658 = 0.310 | 14/1,690 = 0.008 |
+| Cisco 2.2.1 정적, 기본 설정 (E1) | 2,063/6,658 = 0.310 | 14/1,690 = 0.008 |
+| Cisco 2.2.1 정적 + `--use-behavioral`, 논문 설정 (E1) | 2,075/6,658 = 0.312 | 15/1,690 = 0.009 |
 | SkillGate 규칙만 (E1) | 2,810/6,658 = 0.422 | 428/1,690 = 0.253 |
-| dev100, v1 | 32/50 = 0.640 | 0/50 |
+| dev100, v1 (표본이 달라 위 행들과 비교하지 않음) | 32/50 = 0.640 | 0/50 |
+
+PR-AUC(보조, 같은 데이터끼리만 비교. E6 §0·§2):
+- dev 전체: v1 0.907. 아무것도 못 잡아도 악성 비율만큼 나온다(0.798).
+- dev100: 정적 v1 0.820, AI 판정기 LLM 0.961, Jev 0.939. 아무것도 못 잡을 때 0.500. dev100(50:50)과 dev 전체(약 80:20)는 악성 비율이 달라 PR-AUC를 서로 비교하지 않는다.
+- Cisco·SkillGate는 0/1 판정이라 PR-AUC를 내지 않는다.
 
 출처별(v1, 악성 걸림/악성): SRC001 1,396/3,418, SRC002 87/153, SRC004 4/33, SRC005 3/30, SRC006 10/86, SRC008 1/1, SRC010 2,147/2,783, SRC013 5/154. 정상 걸림/정상: SRC010 13/1,643, SRC006 0/45, SRC008 0/2.
 
@@ -101,12 +113,12 @@ script-only 제외 재현율은 기준 확정 전이라 내지 않는다(E6 §8.
 
 ### 4.3 대표 오탐·미탐 근거
 
-- 오탐: 남은 13개는 모두 SRC010 정상이다.
-  - PERSISTENCE 6: 설치 안내의 `echo 'export KEY=…' >> ~/.zshrc` 5개, `systemctl --user enable` 1개
-  - PROMPT_LEAK 2: 문맥 창을 설명하는 문장에 "system prompt"
-  - HOMOGLYPH 2: `μm`, `ΔC` 같은 단위
-  - LURE·HIDDEN_DIRECTIVE·PIPE_TO_SHELL 각 1
-- 미탐(작은 출처 40개 판정, E6 §5.2):
+- 오탐: 남은 13개는 모두 SRC010 정상이다. ID와 evidence는 `results/stage1/stage1_v1_dev.jsonl`에 있다.
+  - PERSISTENCE 6: 설치 안내의 `echo 'export KEY=…' >> ~/.zshrc` 5개, `systemctl --user enable` 1개. ASB04_007907, 008182, 008738(DESC_BYPASS 함께), 008966, 009347, 009349
+  - PROMPT_LEAK 2: 문맥 창을 설명하는 문장에 "system prompt". ASB04_008176, 008249
+  - HOMOGLYPH 2: `μm`, `ΔC` 같은 단위. ASB04_007983, 008906
+  - LURE·HIDDEN_DIRECTIVE·PIPE_TO_SHELL 각 1: ASB04_008307, 008903, 009479
+- 미탐(작은 출처 40개, E6 §5.2. **에이전트 1차 판정이고 담당자 원문 대조 전**이다. ID별 판정은 `docs/experiments/E6_small_source_judgments.csv`):
   - 규칙 범위 부족 8: 가짜 선행 설치 유도, 산문으로 쓴 유출 설명, 출력에 파일 내용 넣기, OpenClaw 예약 등록 등
   - 문서에 없는 증거 3: 동봉 스크립트의 자격증명 경로 읽기, 내려받아 실행
   - 판단 불확실 29

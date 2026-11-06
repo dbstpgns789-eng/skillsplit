@@ -11,6 +11,14 @@ curl -L -o source_disjoint.csv https://raw.githubusercontent.com/protectskills/M
 python sample.py          # 공부용에서 100개 뽑기 → dev100/ 폴더 + dev100_labels.csv
 ```
 
+받은 데이터 확인(2026-11-06 기준 우리 사본). `get_data.py`는 revision을 지정하지 않으므로, 나중에 받으면 값이 다를 수 있다.
+
+| 항목 | 값 |
+|---|---|
+| HF revision (로컬 캐시 `refs/main`) | `d4b42ce5766a6e0359c987cf59c1007cb3795a90` |
+| `skills.csv` sha256 | `ee84513effddd5088064ada13aa2a1637fe7efc1208b5bedbe251ee0f4246cf1` |
+| `source_disjoint.csv` sha256 | `b39846be5adde9b5a9d79019833b2990a3cc71965f5229e5789c6a1da6a20b43` |
+
 `dev100/` 안에 폴더 100개가 생기고, 폴더마다 `SKILL.md` 하나다. 정답은 `dev100_labels.csv`에 있다(`label` 1 = 악성, 0 = 정상).
 
 ## 꼭 지킬 것
