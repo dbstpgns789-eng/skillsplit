@@ -59,7 +59,7 @@ Jev가 들어가는 지표 (모든 숫자에 데이터 이름·모델·버전을
 
 **주의.**
 - Jev는 내부 구조가 공개되지 않아 왜 그렇게 판정했는지 알 수 없다. 사례 분석의 "이유"는 LLM 버전의 근거와 Jev의 `attack_vector` 답으로 대신한다.
-- 입력에 `benchmark_id`, 출처를 넣지 않는다(라벨 누출 방지). Jev 입력 한도 32k 토큰은 공통 자르기 규칙으로 지킨다.
+- 입력에 `benchmark_id`, 출처를 넣지 않는다(라벨 누출 방지). Jev 입력 한도(32k 토큰)를 자르기 v1 뒤에도 넘으면 4xx로 실패해 점수 2/3이 된다(decisions 2026-11-07).
 - jev-skillbench의 네 번째 질문(behavior)은 점수에 쓰이지 않아 v0에서 뺐다.
 - Jev도 같은 요청에 점수가 조금씩 다르다. jev-skillbench에서 같은 표본을 두 번 돌리니 963개 중 64%만 점수가 같았고, 5~6개는 0.5를 넘나들었다. 그래서 3번 돌린다(아래 "3회 반복").
 - `typesafe-ai/jev`는 별칭이라 버전이 바뀔 수 있다. Vercel 경유 응답에는 정확한 버전이 오지 않으므로(details에 `typesafe-ai/jev`로만 남음) 실행 날짜를 함께 기록한다.
@@ -109,6 +109,8 @@ python -m skillsplit.stage2.summarize_runs data/devcheck100_labels.csv runs/stag
 
 있는 회차만 읽고(1회도 됨), 걸림 기준 0.5와 2/3을 나란히, 출처별 숫자도 함께 낸다.
 
+동결 자료와 test 집계에는 `report_thresholds`를 쓴다(문턱 후보별·출처별 분자/분모, 실패 장부, 네 칸, 결합, 비용). 실행 전 데이터 확인은 `check_dataset`. 명령은 `docs/stage2-freeze.md` §2.
+
 ### 3회 반복
 
 temperature 0이어도 답이 완전히 같다는 보장은 없다(Anthropic 문서). 흔들림을 줄일 뿐이다. 그래서 LLM 버전과 Jev 버전 모두 같은 스킬을 3번 판정하고, 결과 파일을 `_r1`, `_r2`, `_r3`으로 따로 쓴다. 보고서에는 세 번의 점수 평균과 함께 흔들림(점수가 모두 같은 비율, 판정이 바뀐 수, 0.5를 넘나든 수)을 적는다.
@@ -137,12 +139,11 @@ done
 | 인젝션 방어 | `<<<SKILL_MD_BEGIN>>>` 구분자, 안의 지시 무시, 판정 조작 시도는 악성 신호 | R2 A5, C7 조건 A (Spotlighting delimiting) |
 | 모델 | `claude-haiku-4-5`(Vercel 이름 `anthropic/claude-haiku-4.5`), temperature 0 | R2 C4, C5. 경로는 Vercel (2026-10-24, Anthropic 키 없음) |
 | 파싱 실패·거부 | 점수 2/3(`FAIL_SCORE`, 문턱 후보 0.5와 2/3 모두에서 걸림), details에 `parse_error`·`refused`로 표시. 답이 512토큰에서 끊긴 경우는 `cut_off`로 따로 표시 | R2 C3, 리뷰(세훈). 2026-10-27 전에는 SUSPICIOUS 0.4 → 점수 0.467이라 문턱 0.5 아래, 즉 안전으로 처리됐음 |
+| 걸림 기준 (2026-11-07, 동결) | LLM score ≥ 2/3(0.5 숫자를 함께 보고), Jev score ≥ 0.5 | dev 전체 1회, `docs/stage2-freeze.md` §4 |
 | 근거 검사 | 원문에 없는 인용은 버리고 개수를 기록 | R2 C3 |
 | 입력에서 뺀 것 | `benchmark_id`, `source_id`, 스킬 폴더 이름 | 라벨 누출 방지 (R2 C1-5) |
 | Jev 질문 | jev-skillbench의 is_malicious, attack_vector, harm_severity | 기존 결과를 다른 데이터에서 재현 |
 
 ## 아직 안 한 것
 
-- 프롬프트 v2를 dev100 3회로 기록, 문턱과 실패 점수 결정(실패 0.467이 문턱 아래인 문제), dev 전체 1회(동결 직전)
 - 결과 캐시(SQLite, R2 C6), 3회 반복 실행과 흔들림 집계, Spotlighting B 조건 (2주차 이후)
-- 점수 문턱 θ와 거부 처리 규칙 확정 (4주차)
