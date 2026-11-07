@@ -9,8 +9,8 @@
 | dev 전체 LLM v2·Jev v0 각 1회 | 완료 (2026-11-04) |
 | 문턱, 입력 한도 처리, 분할 입력 채택 여부 | 확정 (decisions 2026-11-07) |
 | 자르기 v1을 `main`에 반영 | 진행 중 (이 문서와 같은 PR) |
-| 네 칸·결합의 정적 쪽 숫자 | 정적 v0 기준. 왕민 파트의 최종 정적 결과가 나오면 같은 코드로 다시 집계 |
-| script-only 제외 기준 집계 | 보류. 왕민·세훈이 기준과 ID 목록을 확정하면 `--exclude-ids`로 집계 |
+| 네 칸·결합의 정적 쪽 숫자 | 정적 v1(PR #9, 커밋 `31333de`, `results/stage1/stage1_v1_dev.jsonl`)로 2026-11-07 다시 집계함. v0와 악성 판정은 같고 정상 오탐만 21 → 13 |
+| script-only 제외 재현율 | 왕민의 방식(test 악성 중 코드 있는 것에서 층화 표본 100개를 판정해 추정, `docs/script_only_proposal.md`)을 따른다. 판정 시트가 오면 `data/script_only_est.py <시트> <정답 csv> <결과 jsonl>`에 LLM은 `--threshold 0.6667 --ge`, Jev는 `--threshold 0.5 --ge`로 계산. ID를 빼고 세는 방식(`report_thresholds --exclude-ids`)은 쓰지 않는다 |
 | 대표 사례의 원문 대조 | 2026-11-07 SKILL.md 전문을 대조함(§6). 원인은 추정으로 표시 |
 | test LLM·Jev 각 1회 | 미실행. 공통 동결 후 실행 |
 
@@ -49,7 +49,7 @@ $env:PYTHONIOENCODING = 'utf-8'
 for ($i = 1; $i -le 30; $i++) { python -m skillsplit.stage2.llm_judge data/dev_skills --out runs/stage2_llm_v2_dev_r1.jsonl; if ($LASTEXITCODE -eq 0) { break }; Start-Sleep -Seconds 60 }
 python -m skillsplit.stage2.jev_judge data/dev_skills --out runs/stage2_jev_v0_dev_r1.jsonl --via vercel
 # 집계
-python -m skillsplit.stage2.report_thresholds data/dev_labels.csv --static runs/stage1_v0_dev.jsonl --llm runs/stage2_llm_v2_dev_r1.jsonl --jev runs/stage2_jev_v0_dev_r1.jsonl
+python -m skillsplit.stage2.report_thresholds data/dev_labels.csv --static runs/stage1_v1_dev.jsonl --llm runs/stage2_llm_v2_dev_r1.jsonl --jev runs/stage2_jev_v0_dev_r1.jsonl
 ```
 
 ### test 실행 계획 (공통 동결 후, 각 1회)
@@ -62,11 +62,11 @@ python -m skillsplit.stage2.report_thresholds data/dev_labels.csv --static runs/
 
 ## 3. dev 전체 결과
 
-전체 표(문턱 후보별, 출처별, 실패 장부, 네 칸, 결합, 비용)는 [stage2_dev_report.md](experiments/stage2_dev_report.md)에 있다. 이 파일은 `report_thresholds`의 출력 그대로다. 아래는 최종 기준의 요약이다(dev, 각 1회, 자르기 v1).
+전체 표(문턱 후보별, 출처별, 실패 장부, 네 칸, 결합, 비용)는 [stage2_dev_report.md](experiments/stage2_dev_report.md)에 있다. 이 파일은 `report_thresholds`의 출력 그대로다. 아래는 최종 기준의 요약이다(dev, 각 1회, 자르기 v1, 정적은 v1). 정적 v0 기준 보고서는 커밋 `002fe46`에 있다.
 
 | 방법 | 기준 | 악성 잡음 | 정상 오탐 |
 |---|---|---|---|
-| 정적 v0 | > 0 | 3,653/6,658 (54.87%) | 21/1,690 (1.24%) |
+| 정적 v1 | > 0 | 3,653/6,658 (54.87%) | 13/1,690 (0.77%) |
 | LLM v2 | 2/3 | 4,442/6,658 (66.72%) | 62/1,690 (3.67%) |
 | LLM v2 (실패 제외) | 2/3 | 4,387/6,603 (66.44%) | 61/1,689 (3.61%) |
 | LLM v2 (병기) | 0.5 | 5,991/6,658 (89.98%) | 197/1,690 (11.66%) |
@@ -86,7 +86,7 @@ python -m skillsplit.stage2.report_thresholds data/dev_labels.csv --static runs/
 | `stage2_llm_v2_dev_r1.details.jsonl` | `d03cf06511991860d5d89d1c7d7a0de488f79da4e9c9d6fb5e4ba087ad3d6e19` |
 | `stage2_jev_v0_dev_r1.jsonl` | `a5b52932b5fe1ab52f3bf9f207f072c448ec73b5c0a0a29f21e5063747e28346` |
 | `stage2_jev_v0_dev_r1.details.jsonl` | `09fd79e3300bf3bc077ac3244b6ef5add09f365a4c98ab6ecb18090cfb3730ce` |
-| `stage1_v0_dev.jsonl` (네 칸에 쓴 정적 결과) | `84863570a4b80819056b04cd5a2e5fdf624565ea0d348f0a52a9fedf7e014f78` |
+| `stage1_v1_dev.jsonl` (네 칸에 쓴 정적 결과, PR #9의 `results/stage1/`) | `7a6be214c330d3a01d15f7cea7004df543aaeead9889ec0aee7cf5a2a1332ee3` |
 
 ## 4. 문턱을 이렇게 정한 이유
 
@@ -99,13 +99,14 @@ python -m skillsplit.stage2.report_thresholds data/dev_labels.csv --static runs/
 ### 보고할 결합 (test를 보기 전에 고정)
 
 모두 "하나라도 걸면 걸림"이고, 아래 네 조합을 LLM 2/3 기준과 0.5 기준으로 결과와 상관없이 전부 보고한다.
+정적은 v1(score > 0)이다. 네 칸(정적 × LLM 2,617/1,036/1,825/1,180, 정적 × Jev 1,571/2,082/1,434/1,571)은 v0와 같다.
 
 | 조합 | dev, LLM 2/3 + Jev 0.5 | dev, LLM 0.5 + Jev 0.5 |
 |---|---|---|
-| 정적 또는 LLM | 악성 5,478/6,658, 오탐 80/1,690 | 악성 6,192/6,658, 오탐 213/1,690 |
-| 정적 또는 Jev | 악성 5,087/6,658, 오탐 21/1,690 | 같음 |
+| 정적 또는 LLM | 악성 5,478/6,658, 오탐 74/1,690 | 악성 6,192/6,658, 오탐 208/1,690 |
+| 정적 또는 Jev | 악성 5,087/6,658, 오탐 13/1,690 | 같음 |
 | LLM 또는 Jev | 악성 4,593/6,658, 오탐 62/1,690 | 악성 6,008/6,658, 오탐 197/1,690 |
-| 셋 중 하나 | 악성 5,577/6,658, 오탐 80/1,690 | 악성 6,199/6,658, 오탐 213/1,690 |
+| 셋 중 하나 | 악성 5,577/6,658, 오탐 74/1,690 | 악성 6,199/6,658, 오탐 208/1,690 |
 
 ## 5. 입력 자르기와 분할 입력
 
