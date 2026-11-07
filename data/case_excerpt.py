@@ -9,6 +9,7 @@ import tarfile
 
 import pandas as pd
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # -I는 스크립트 폴더를 import 경로에서 빼므로 직접 넣는다
 from script_only import evidence, is_code
 
 
