@@ -13,7 +13,7 @@
 | PR #4 리뷰 1~4번(가중치, 비교 조건, PR-AUC 해석, RUN 분리) | 완료 | E6 §2·§3, E5 §0 |
 | 작은 출처 미탐 사례 판정 | 완료 | 40개, 에이전트 1차 판정. unclear가 아닌 11개는 원문 대조(11-07, 에이전트가 원문 미출력 스크립트로 확인, 담당자가 판정 결정. 10개 동의·1개 unclear로). unclear 29개는 숫자에 영향이 없어 대조 안 함 |
 | E4 script_only 10개 코드 근거 | 완료 | 11-07. 7개는 원문 미출력 구조 확인으로 `파일:줄` 근거를 남기고 모두 유지(E6 §8.3, `E4_judgments.csv` `code_evidence`) |
-| script-only 기준 | 정함(11-07), dev 파일럿 판정 진행 중 | E6 §8.2·§8.4, `docs/script_only_proposal.md`. 범위 (가), 층화 표본(test 100, dev 30) + 추정. 세훈 님께 통보, 반대 의견은 동결 전까지 |
+| script-only 기준 | 정함(11-07), 문구는 동결 때 고정. dev 파일럿 판정은 동결 뒤 test 판정 전 | E6 §8.2·§8.4, `docs/script_only_proposal.md`. 범위 (가), 층화 표본(test 100, dev 30) + 추정. 세훈 님께 통보, 반대 의견은 동결 전까지 |
 | 가중치 심각도 순서의 근거 | 완료 | 11-07. 등급 기준을 stage1 README §3.1에 적음(예외 CONCEAL 1개). 값은 순서만 반영한 임의 값. 걸림 여부에는 영향 없음(§2 점수) |
 | test 예상(§6) 담당자 확정 | 완료 | 11-07 |
 | test 집계 스크립트 | 완료 | `data/s1_eval.py` |
@@ -94,7 +94,7 @@ PR-AUC(보조, 같은 데이터끼리만 비교. E6 §0·§2):
 
 누락 0, 중복 0, 실패 0, 입력 생략(앞 300,000자만 검사) 1개(dev 전체), dev100 0.
 
-script-only 제외 재현율은 아직 내지 않는다. 기준은 11-07에 정했고(E6 §8.2, [script_only_proposal](script_only_proposal.md)), dev 파일럿 30개(`docs/experiments/script_only_dev_sheet.csv`)는 판정 전이다. 판정이 끝나면 `script_only_est.py`로 낸 참고값을 적는다. E6 §8.3의 90개는 미탐에서만 뽑아 추정에 쓰지 않는다.
+script-only 제외 재현율은 아직 내지 않는다. 기준은 11-07에 정했고(E6 §8.2, [script_only_proposal](script_only_proposal.md)), dev 파일럿 30개(`docs/experiments/script_only_dev_sheet.csv`)는 동결 뒤 test 판정 전에 판정한다(기준 문구는 바꾸지 않음). 판정이 끝나면 `script_only_est.py`로 낸 참고값을 적는다. E6 §8.3의 90개는 미탐에서만 뽑아 추정에 쓰지 않는다.
 
 결과 파일(원문 없음):
 - `results/stage1/stage1_v1_dev.jsonl`, `stage1_v1_dev100.jsonl`과 각 `.details.jsonl`: 공통 형식
