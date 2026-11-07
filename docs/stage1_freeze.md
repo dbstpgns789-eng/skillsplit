@@ -49,7 +49,17 @@ python -m skillsplit.stage1.scan <test 스킬 폴더> --out runs/stage1_v1_test.
 cd data
 python -X utf8 s1_eval.py <test 스킬 폴더> ../runs/stage1_v1_test.jsonl <test 정답 csv: benchmark_id,label[,source_id]>
 #   -X utf8: Windows 콘솔(cp949)에서 한글 출력이 깨지지 않게
-#   script-only 기준 확정 후: --script-only <판정 csv: benchmark_id,verdict>
+```
+
+script-only 제외 재현율(동결 뒤, [script_only_proposal](script_only_proposal.md) §5). `s1_eval.py --script-only`는 쓰지 않는다. 그 옵션은 csv에 있는 ID만 빼서, 표본 시트를 넣으면 틀린 값이 나온다.
+
+```
+cd data
+# test 패키지 압축을 data/에 받아 둔다(풀지 않음). 정답 csv에 source_id 열이 있어야 한다
+python -I script_only.py <test 정답 csv> <test script_evidence csv>                    # 1. 코드 파일 유무·자동 근거
+python -I script_only_sample.py <test script_evidence csv> 100 <test 시트 csv>          # 2. 표본 100개(seed 0), 판정 시트
+#   3. 판정자(왕민)가 탐지기 결과를 보지 않고 시트의 verdict 등을 채운다(script_only_view.py)
+python -I script_only_est.py <test 시트 csv> <test 정답 csv> ../runs/stage1_v1_test.jsonl --threshold 0   # 4. 추정
 ```
 
 - `s1_eval.py` 출력: 파일 수·해시·누락·중복·생략 건수, 전체와 출처별 "악성 걸림/악성", "정상 걸림/정상".
@@ -84,7 +94,7 @@ PR-AUC(보조, 같은 데이터끼리만 비교. E6 §0·§2):
 
 누락 0, 중복 0, 실패 0, 입력 생략(앞 300,000자만 검사) 1개(dev 전체), dev100 0.
 
-script-only 제외 재현율은 기준 확정 전이라 내지 않는다(E6 §8. 지금까지 분류한 90개만으로는 3,653/6,646 = 0.550).
+script-only 제외 재현율은 아직 내지 않는다. 기준은 11-07에 정했고(E6 §8.2, [script_only_proposal](script_only_proposal.md)), dev 파일럿 30개(`docs/experiments/script_only_dev_sheet.csv`)는 판정 전이다. 판정이 끝나면 `script_only_est.py`로 낸 참고값을 적는다. E6 §8.3의 90개는 미탐에서만 뽑아 추정에 쓰지 않는다.
 
 결과 파일(원문 없음):
 - `results/stage1/stage1_v1_dev.jsonl`, `stage1_v1_dev100.jsonl`과 각 `.details.jsonl`: 공통 형식
