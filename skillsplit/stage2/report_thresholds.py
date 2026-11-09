@@ -131,7 +131,9 @@ def main():
     print("\n## 토큰·시간·비용 (LLM은 토큰 × 가격 계산, Jev는 응답의 cost_usd)")
     li, lo = sum(llm_d[i]["input_tokens"] for i in ids), sum(llm_d[i]["output_tokens"] for i in ids)
     print(f"- LLM: 입력 {li:,}, 출력 {lo:,} 토큰, ${li * LLM_USD_PER_TOKEN['input'] + lo * LLM_USD_PER_TOKEN['output']:.2f}, 호출 시간 합 {sum(llm_d[i]['seconds'] for i in ids) / 3600:.2f}시간, 입력 토큰 최대 {max(llm_d[i]['input_tokens'] for i in ids):,}")
-    print(f"- Jev: 입력 {sum(jev_d[i]['input_tokens'] or 0 for i in ids):,} 토큰, ${sum(jev_d[i]['cost_usd'] or 0 for i in ids):.2f}, 호출 시간 합 {sum(jev_d[i]['seconds'] for i in ids) / 3600:.2f}시간, 입력 토큰 최대 {max(jev_d[i]['input_tokens'] or 0 for i in ids):,}")
+    # Jev 실패 기록에는 input_tokens가 없고 cost_usd는 0으로 적힌다. 0으로 확인된 것이 아니라 모르는 것이므로 합계에서 빼고 건수를 따로 낸다.
+    jev_known = [jev_d[i] for i in ids if jev_d[i].get("input_tokens") is not None]
+    print(f"- Jev: 입력 {sum(r['input_tokens'] for r in jev_known):,} 토큰, ${sum(r['cost_usd'] or 0 for r in jev_known):.2f}, 호출 시간 합 {sum(jev_d[i]['seconds'] for i in ids) / 3600:.2f}시간, 입력 토큰 최대 {max((r['input_tokens'] for r in jev_known), default=0):,}, 사용량 모름 {len(ids) - len(jev_known)}건(토큰 기록이 없어 합계·최대에서 뺌. 0으로 확인된 것이 아님)")
     print(f"- 모델: LLM {dict(Counter(llm_d[i]['model'] for i in ids))}, Jev {dict(Counter(jev_d[i]['model'] for i in ids))}")
 
 

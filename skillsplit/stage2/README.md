@@ -98,7 +98,7 @@ python -m skillsplit.stage2.jev_judge data/dev100 --out runs/stage2_jev_v0_dev10
 
 중간에 끊겨도 같은 `--out`으로 다시 돌리면 이미 끝난 스킬은 건너뛴다.
 
-판정 실패 처리 (LLM·Jev 같은 규칙): 끝까지 판정하지 못한 스킬은 점수 2/3으로 결과 파일에 쓰고("걸림"), details에 실패를 표시한다. LLM은 `parse_error`·`refused`·`cut_off`, Jev는 `failed`·`error`. Jev는 일시적 오류(429, 5xx, 연결·시간 초과)를 5·15·45초 기다리며 3번까지 다시 보내고, 4xx나 답 모양이 다른 경우는 바로 실패로 친다. 실패한 스킬도 결과 줄이 있으므로 다시 돌려도 건너뛴다. 다시 판정하려면 그 줄을 결과 파일과 details에서 지운다. 보고할 때는 실패 건수를 따로 적고, 실패한 스킬은 원래 답(`raw_if_failed`, `error`)을 직접 확인한다.
+판정 실패 처리 (LLM·Jev 같은 규칙): 끝까지 판정하지 못한 스킬은 점수 2/3으로 결과 파일에 쓰고("걸림"), details에 실패를 표시한다. LLM은 `parse_error`·`refused`, Jev는 `failed`·`error`. LLM의 `cut_off`(답이 512토큰에서 끊김)는 실패 표시가 아니라 원인 기록이다. 끊겨도 판정을 읽을 수 있으면 그 판정을 쓰고, 읽지 못하면 `parse_error`가 함께 남는다. Jev는 일시적 오류(429, 5xx, 연결·시간 초과)를 5·15·45초 기다리며 3번까지 다시 보내고, 4xx나 답 모양이 다른 경우는 바로 실패로 친다. 실패한 스킬도 결과 줄이 있으므로 다시 돌려도 건너뛴다. 다시 판정하려면 그 줄을 결과 파일과 details에서 지운다. 보고할 때는 실패 건수를 따로 적고, 실패한 스킬은 원래 답(`raw_if_failed`, `error`)을 직접 확인한다.
 
 3회 결과를 모아 성능·흔들림·비용·정적과의 네 칸을 보려면(정적 결과 파일은 1단계 `scan`으로 만든다):
 
@@ -109,7 +109,7 @@ python -m skillsplit.stage2.summarize_runs data/devcheck100_labels.csv runs/stag
 
 있는 회차만 읽고(1회도 됨), 걸림 기준 0.5와 2/3을 나란히, 출처별 숫자도 함께 낸다.
 
-동결 자료와 test 집계에는 `report_thresholds`를 쓴다(문턱 후보별·출처별 분자/분모, 실패 장부, 네 칸, 결합, 비용). 실행 전 데이터 확인은 `check_dataset`. 명령은 `docs/stage2-freeze.md` §2.
+동결 자료와 test 집계에는 `report_thresholds`를 쓴다(문턱 후보별·출처별 분자/분모, 실패 장부, 네 칸, 결합, 비용). Jev 실패 기록에는 토큰 수가 없어 비용 줄에서 합계에 넣지 않고 "사용량 모름" 건수로 따로 낸다(`tests/test_report_thresholds.py`). 실행 전 데이터 확인은 `check_dataset`. 명령은 `docs/stage2-freeze.md` §2.
 
 ### 3회 반복
 
