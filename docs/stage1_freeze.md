@@ -56,6 +56,8 @@ script-only 제외 재현율(동결 뒤, [script_only_proposal](script_only_prop
 ```
 cd data
 # test 패키지 압축을 data/에 받아 둔다(풀지 않음). 정답 csv에 source_id 열이 있어야 한다
+#   make_test.py의 test_labels.csv에는 source_id가 없으므로 skills.csv에서 붙인 파일을 아래 <test 정답 csv>로 쓴다
+python -c "import pandas as p; p.read_csv('test_labels.csv').merge(p.read_csv('skills.csv', usecols=['benchmark_id', 'source_id']), on='benchmark_id', how='left', validate='1:1').to_csv('test_labels_src.csv', index=False)"
 python -I script_only.py <test 정답 csv> <test script_evidence csv>                    # 1. 코드 파일 유무·자동 근거
 python -I script_only_sample.py <test script_evidence csv> 100 <test 시트 csv>          # 2. 표본 100개(seed 0), 판정 시트
 #   3. 판정자(왕민)가 탐지기 결과를 보지 않고 시트의 verdict 등을 채운다(script_only_view.py)
@@ -78,7 +80,7 @@ python -I script_only_est.py <test 시트 csv> <test 정답 csv> ../runs/stage1_
 |---|---:|---:|
 | v1 전체 | 3,653/6,658 = 0.549 (95% CI 0.537~0.561) | 13/1,690 = 0.008 (95% CI 0.0045~0.0131) |
 | v1, 출처 편향 규칙 9개 제외 | 1,065/6,658 = 0.160 | 9/1,690 = 0.005 |
-| v1, 반복 틀 RUN 줄로만 잡힌 1,482개 제외 | 2,171/6,658 = 0.326 | 13/1,690 |
+| v1, 반복 틀 RUN 줄로만 잡힌 1,525개 제외 | 2,128/6,658 = 0.320 | 13/1,690 |
 | v0 | 3,653/6,658 = 0.549 | 21/1,690 = 0.012 |
 | Cisco 2.2.1 정적, 기본 설정 (E1) | 2,063/6,658 = 0.310 | 14/1,690 = 0.008 |
 | Cisco 2.2.1 정적 + `--use-behavioral`, 논문 설정 (E1) | 2,075/6,658 = 0.312 | 15/1,690 = 0.009 |
@@ -107,7 +109,7 @@ script-only 제외 재현율은 아직 내지 않는다. 기준은 11-07에 정�
 | 변경 | 효과 (관찰) |
 |---|---|
 | RUN_DIRECTIVE → RUN_CMD·RUN_INIT (정규식 그대로) | 걸림 여부 변화 없음. 출처·반복 틀을 따로 셀 수 있게 됨 |
-| CRED_PATH: `ssh-add`·`ssh-keygen`·`ssh -i`로 시작하는 줄 예외 | 오탐 21 → 13, 재현율 변화 없음(3,653/6,658) |
+| CRED_PATH: `ssh-add`·`ssh-keygen`·`ssh -i`로 시작하는 줄 예외(같은 줄에 `;`·`&`·`|`로 다른 명령이 붙으면 예외 아님) | 오탐 21 → 13, 재현율 변화 없음(3,653/6,658) |
 | 채택 기준 2에 최다 출처 비중 < 90% | 점수 변화 없음(편향 규칙도 점수에 남김). 보고에 "편향 제외 재현율" 추가 |
 
 ### 4.2 시도했지만 넣지 않은 것
@@ -135,7 +137,7 @@ script-only 제외 재현율은 아직 내지 않는다. 기준은 11-07에 정�
 
 ### 4.4 남은 한계와 다음 가설
 
-- 관찰: 재현율의 상당 부분이 dev의 큰 두 출처(SRC001·SRC010)의 문장 틀에서 나온다. 출처 편향 제외 0.160, 반복 틀 제외 0.326이다.
+- 관찰: 재현율의 상당 부분이 dev의 큰 두 출처(SRC001·SRC010)의 문장 틀에서 나온다. 출처 편향 제외 0.160, 반복 틀 제외 0.320이다.
 - 관찰: dev 정상의 97%가 SRC010이라 오탐률 0.008은 한 출처 정상에서 잰 값이다.
 - 추정: 작은 출처의 미탐은 정해 둔 단어 목록에 없는 표현과 실행해 봐야 드러나는 동작(출력 조작) 때문이다. 정적 규칙으로 메우기 어렵다.
 - 다음 가설(test 뒤, 탐색적 개선으로 표시):

@@ -161,6 +161,8 @@ def test_cred_path_skips_own_key_use():
     assert "CRED_PATH" not in ids(fence("ssh-add ~/.ssh/id_ed25519"))
     assert "CRED_PATH" not in ids(fence("ssh -i ~/.ssh/id_rsa deploy@example.invalid"))
     assert scan_text(fence("ssh-add ~/.ssh/id_ed25519\ncat ~/.ssh/id_ed25519"))[1] == ["CRED_PATH@L3"]  # 예외는 그 줄만
+    for sep in ("; ", " && ", " || ", " | ", " & "):  # 같은 줄에 다른 명령이 붙으면 예외 아님
+        assert "CRED_PATH" in ids(fence(f"ssh-add ~/.ssh/id_ed25519{sep}cat ~/.aws/credentials")), sep
 
 
 def test_rule_set_is_complete_and_valid():

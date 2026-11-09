@@ -55,7 +55,7 @@ tests/
 | PIPE_TO_SHELL | CRITICAL | 내려받은 내용을 바로 셸로 넘김 | SkillGate RCE001~004 (MIT) |
 | DECODE_EXEC | CRITICAL | 같은 코드 블록에서 base64 디코드 + eval/exec | SkillGate RCE010~012 (MIT), SkillSpector SC3 (Apache-2.0) |
 | REMOTE_EXEC | CRITICAL | 원격에서 받은 내용을 그대로 실행 | SkillSpector (Apache-2.0), Cisco (Apache-2.0) |
-| CRED_PATH | HIGH | 자격증명 경로 접근. 키 문자열은 보지 않음. `ssh-add`·`ssh-keygen`·`ssh -i`로 시작하는 줄은 제외(v1, `exclude`) | SkillGate CRED001~019 (MIT) |
+| CRED_PATH | HIGH | 자격증명 경로 접근. 키 문자열은 보지 않음. `ssh-add`·`ssh-keygen`·`ssh -i`로 시작하는 줄은 제외(v1, `exclude`). 같은 줄에 `;`·`&`·`|`로 다른 명령이 붙으면 제외하지 않음 | SkillGate CRED001~019 (MIT) |
 | EXFIL_SEND | HIGH | 파일·환경변수를 밖으로 전송 | SkillGate EXFIL (MIT), SkillSpector E1 (Apache-2.0) |
 | PERSISTENCE | HIGH | crontab, 셸 시작 파일에 덧붙이기, launchctl, systemd | SkillGate PRIV 계열 (MIT), E4 |
 

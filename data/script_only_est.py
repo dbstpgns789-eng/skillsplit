@@ -48,6 +48,11 @@ def main():
     if not set(sheet.benchmark_id) <= set(mal.benchmark_id):
         raise SystemExit("시트에 정답의 악성이 아닌 id가 있다. 다른 분할의 시트인지 확인")
     sheet["hit"] = sheet.benchmark_id.map(dict(zip(mal.benchmark_id, mal.hit)))
+    dup = sheet.benchmark_id[sheet.benchmark_id.duplicated()]
+    if len(dup):
+        raise SystemExit(f"시트에 중복 id {len(dup)}개: {list(dup[:10])}")
+    if (sheet.groupby("stratum")[["C_h", "n_h"]].nunique() > 1).any(axis=None):
+        raise SystemExit("같은 층 안에서 C_h 또는 n_h가 행마다 다르다")
     C = sheet.groupby("stratum").C_h.first()
     nh = sheet.groupby("stratum").size()
     if not (nh == sheet.groupby("stratum").n_h.first()).all():

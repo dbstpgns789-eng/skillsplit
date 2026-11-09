@@ -2,7 +2,7 @@
 # 걸린 줄을 정규화(백틱 안·경로·파일 이름·숫자를 자리표시자로, 소문자, 기호 제거)한다.
 # 빈칸 단어만 바뀌는 틀이 있어서, 정규화 문장끼리 단어 3-gram 자카드 ≥ NEAR이면 "거의 같은 문장"으로 본다.
 # 걸린 문장과 거의 같은 문장이 (자기 포함) MIN_REPEAT개 이상 샘플에 나오면 "반복 틀". 출처는 기준에 쓰지 않고 집계에만 쓴다.
-# 앞부분만 같고 뒤가 다른 긴 줄이 있어서, "걸린 위치부터 WIN단어"가 같은 샘플 수도 센다(주 기준, E6 §3).
+# 앞부분만 같고 뒤가 다른 긴 줄이 있어서, "걸린 위치부터 WIN단어"가 같은 샘플 수도 센다(주 기준, E6 §3). 다음 줄로 넘어가지 않는다(줄이 짧으면 WIN단어보다 적음).
 # 원문은 출력하지 않는다(정규화 문장 앞 90자만).
 # 사용: cd data && python run_template.py → runs_dev/run_template.csv
 import re
@@ -41,7 +41,7 @@ def hits(d):
                 s, e = v.rfind("\n", 0, m.start()) + 1, v.find("\n", m.end())
                 rows.append({"benchmark_id": b, "label": lab, "source_id": src, "rule": rid,
                              "line": v.count("\n", 0, m.start()) + 1, "form": norm(v[s: e if e >= 0 else None]),
-                             "win": " ".join(norm(v[m.start(): m.start() + 300]).split()[:WIN])})
+                             "win": " ".join(norm(v[m.start(): e if e >= 0 else None]).split()[:WIN])})
     return pd.DataFrame(rows)
 
 
