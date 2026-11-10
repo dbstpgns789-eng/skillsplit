@@ -2,6 +2,14 @@
 
 숫자마다 데이터, 버전, 모델을 함께 적는다(방향 정리 문서의 주간 보고 규칙).
 
+## 2026-11-11 · test 전체(1,384개) · freeze-v1 `b0ff1e0` · LLM prompt v2 / Jev questions v0 / 자르기 v1 · Vercel(claude-haiku-4.5, temperature 0), 각 1회
+
+- 결과와 조건은 [stage2-test.md](stage2-test.md), 전체 표는 [experiments/stage2_test_report.md](experiments/stage2_test_report.md). 원본·로그는 팀 드라이브 `공유_AI판정기_결과/test_2026-11-11`.
+- test 폴더는 11-10 23:49 `make_test.py`로 처음 만들고 `check_dataset`으로 원문 대조(다름 0). LLM 00:06:11~01:12:38(66분, $4.96), Jev 01:12:38~01:25:11(13분, $0.13). 잘린 스킬 0, LLM 실패 1(답 끊김, 2/3), Jev 실패 0.
+- 성적(최종 기준): 정적 71/839·25/545, LLM 2/3 251/839(29.9%)·4/545(0.7%), LLM 0.5 535·16, Jev 0.5 125/839(14.9%)·0/545. 네 칸(정적×LLM 2/3) 45/26/206/562, 정적×Jev 21/50/104/664. 셋 중 하나 294/839(35.0%)·29/545. §7 예상과 비교: LLM 0.5 재현율만 범위 위(63.8% > 62%), 나머지 다섯은 범위 안. SkillScreen 같은 test 수치(28.8%/0.6%, 11.3%/0.0%)와 거의 같음.
+- 사고: 00:00 첫 실행(r0)의 LLM 요약 파일을 Windows Defender가 `Trojan:PowerShell/Obfus.YYG!MTB`로 격리해 앞 52건이 사라짐(근거 인용에 악성 명령 줄). 00:05 중단·폐기, 00:06 처음부터 재실행(r1). r1 완료 직후 같은 파일이 다시 격리돼 제외 폴더 등록 뒤 복원(완성본 그대로, 1,384줄 확인). 재개·API 재호출 없음.
+- 정적 test는 왕민 zip(`stage1_v1_test.jsonl` sha256 `ad5a2cd4…`)을 SHA256SUMS로 검증하고 정답 csv가 우리 것과 바이트 동일함을 확인한 뒤 썼다.
+
 ## 2026-11-09 · PR #8 리뷰 반영 (세훈) · 판정 코드 변경 없음, API 호출 없음
 
 - 문제 1: Jev 실패 기록이 하나라도 있으면 `report_thresholds`가 비용 줄에서 `KeyError('input_tokens')`로 멈췄다. `jev_judge`의 실패 기록에는 `input_tokens` 칸이 없는데 집계가 그 칸을 바로 읽었다. dev는 Jev 실패가 0건이라 드러나지 않았고, 기존 dev 숫자에는 영향이 없다.

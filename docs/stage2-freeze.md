@@ -12,7 +12,7 @@
 | 네 칸·결합의 정적 쪽 숫자 | 정적 v1(PR #9, 커밋 `31333de`, `results/stage1/stage1_v1_dev.jsonl`)로 2026-11-07 다시 집계함. v0와 악성 판정은 같고 정상 오탐만 21 → 13 |
 | script-only 제외 재현율 | 왕민의 방식(test 악성 중 코드 있는 것에서 층화 표본 100개를 판정해 추정, `docs/script_only_proposal.md`)을 따른다. 판정 시트가 오면 `data/script_only_est.py <시트> <script_evidence csv> <정답 csv> <결과 jsonl>`에 LLM은 `--threshold 0.6667 --ge`, Jev는 `--threshold 0.5 --ge`로 계산. ID를 빼고 세는 방식(`report_thresholds --exclude-ids`)은 쓰지 않는다 |
 | 대표 사례의 원문 대조 | 2026-11-07 SKILL.md 전문을 대조함(§6). 원인은 추정으로 표시 |
-| test LLM·Jev 각 1회 | 미실행. 공통 동결 후 실행 |
+| test LLM·Jev 각 1회 | 완료 (2026-11-11, freeze-v1). 결과는 [stage2-test.md](stage2-test.md) |
 
 ## 2. 실행 조건
 
