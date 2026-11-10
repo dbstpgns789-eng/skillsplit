@@ -11,6 +11,14 @@ curl -L -o source_disjoint.csv https://raw.githubusercontent.com/protectskills/M
 python sample.py          # 공부용에서 100개 뽑기 → dev100/ 폴더 + dev100_labels.csv
 ```
 
+받은 데이터 확인(2026-11-06 기준 우리 사본). `get_data.py`는 revision을 지정하지 않으므로, 나중에 받으면 값이 다를 수 있다.
+
+| 항목 | 값 |
+|---|---|
+| HF revision (로컬 캐시 `refs/main`) | `d4b42ce5766a6e0359c987cf59c1007cb3795a90` |
+| `skills.csv` sha256 | `ee84513effddd5088064ada13aa2a1637fe7efc1208b5bedbe251ee0f4246cf1` |
+| `source_disjoint.csv` sha256 | `b39846be5adde9b5a9d79019833b2990a3cc71965f5229e5789c6a1da6a20b43` |
+
 `dev100/` 안에 폴더 100개가 생기고, 폴더마다 `SKILL.md` 하나다. 정답은 `dev100_labels.csv`에 있다(`label` 1 = 악성, 0 = 정상).
 
 ## 꼭 지킬 것
@@ -33,5 +41,10 @@ python sample.py          # 공부용에서 100개 뽑기 → dev100/ 폴더 + d
 | `signals.py` | 두 도구가 놓친 악성에서 찾은 행위 신호 6개를 dev 전체에서 집계(원문 출력 없음). `python signals.py` → `runs_dev/signals.csv` |
 | `src001_signals.py`, `src001_profile.py`, `src001_ngrams.py` | SRC001에서 두 도구가 놓친 악성 분석(E3). `package_manifest.csv` 필요. 원문 출력 없음 |
 | `e4_diff.py`, `e4_excerpt.py` | E3의 남은 539개가 공격인지 라벨 문제인지 판정(E4). 비교 결과와 URL·명령을 가린 200자 발췌만 출력 |
-| `s1_rule_report.py` | 정적 탐지기 v0를 dev 전체에 돌려 규칙별 정상 적중률·출처 수와 전체 수치를 냄(E5). 원문 출력 없음 |
+| `s1_rule_report.py` | 정적 탐지기를 dev 전체에 돌려 규칙별 정상 적중률·출처 수·최다 출처 비중과 전체 수치를 냄(E5 v0, E6 v1). 원문 출력 없음 |
+| `script_only.py` | script-only 판정 1단계: 악성마다 동봉 코드에서 공격 동작 근거를 `파일:줄:동작`으로 남김(E6 §8). 패키지 압축(`<SRC>_packages.tar.gz`)과 `package_manifest.csv` 필요, 압축은 풀지 않음 |
+| `s1_eval.py` | 정적 결과 집계(dev·test 공용): 파일 수·sha256·누락·중복 확인, 재현율·오탐률 분자/분모, 출처별, script-only 제외 |
+| `script_only_sample.py`, `script_only_est.py`, `script_only_view.py` | script-only 층화 표본·판정 시트 만들기, 제외 재현율 추정(정적·LLM·Jev 공용, 유한모집단 베이즈: 중앙값과 95% 베이즈 구간, 후보 목록을 함께 받음), 판정자 터미널 전용 원문 보기(`docs/script_only_proposal.md`) |
+| `script_only_ci_trial.py` | script-only 제외 재현율 구간 계산 방법 비교 기록(PR #9 리뷰 2번, 11-10에 유한모집단 베이즈로 정함). 가상 사례와 예전 bootstrap과의 coverage만 출력하며 test 순서에는 쓰지 않음 |
+| `run_template.py`, `case_excerpt.py` | RUN 규칙 반복 틀 세기(E6 §3), 사례 판정용 가린 발췌(E6 §5). 원문 출력 없음 |
 | `make_test.py`, `count_cisco.py` | 대표가 Cisco 기준선 돌릴 때 쓰는 것. 팀원은 안 써도 됨 |
