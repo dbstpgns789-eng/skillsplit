@@ -1,39 +1,25 @@
-# [시험용, 미확정] script-only 제외 재현율 95% 구간 계산 방법 비교 (PR #9 리뷰 2번, 세훈 님 검토용).
-# script_only_est.py와 동결 문서의 test 순서는 이 파일을 쓰지 않는다. 방법이 정해지면 script_only_est.py에 반영한다.
-# 초안: 층 h × 탐지기 걸림 g 칸마다 후보 수 N_hg는 정확히 알고, 표본 n_hg 중 script_only가 s_hg개.
-#   조사 안 한 U = N_hg − n_hg개 중 script_only 수 ~ Beta-Binomial(U, s+a, n−s+a)  (유한모집단 베이즈, a=0.5 Jeffreys)
-#   K1 = Σ_h K_h,걸림, K0 = Σ_h K_h,안걸림 →  R = (H − K1) / (N − K1 − K0). 분모 0이면 "정의 안 됨"
-# 출력: ① 리뷰의 가상 사례 4개, ② coverage(가상 모집단에서 95% 구간이 참값을 포함하는 비율, 초안 vs 현재 bootstrap)
+# script-only 제외 재현율 95% 구간 계산 방법 비교 기록 (PR #9 리뷰 2번). 11-10에 유한모집단 베이즈로 정해 script_only_est.py에 반영했다.
+# 이 파일은 그 근거(리뷰 가상 사례 4개, 예전 bootstrap과의 coverage 비교)를 다시 내는 용도이고 test 순서에는 쓰지 않는다.
+# 새 방법(draw, summary)은 script_only_est.py의 것을 그대로 불러 쓴다. a=0.5(Jeffreys).
+# 출력: ① 리뷰의 가상 사례 4개, ② coverage(가상 모집단에서 95% 구간이 참값을 포함하는 비율, 새 방법 vs 예전 bootstrap)
 #   coverage의 후보 칸 크기·H·N은 dev 값(script_evidence_dev.csv의 n_code > 0 × stage1_v1_dev.jsonl score > 0)을 적어 둔 것. 원문·실제 판정은 쓰지 않는다
 # 사용: cd data && python -I script_only_ci_trial.py   (약 1분 30초, 시드 고정)
+import os
+import sys
+
 import numpy as np
 
 
-def polya(cells, H, N, draws=10_000, a=0.5, seed=0):
-    """cells: [(N_hg, hit: bool, n_hg, s_hg)]. 반환: R 표본(분모 0이면 nan)."""
-    rng = np.random.default_rng(seed)
-    K1, K0 = np.zeros(draws), np.zeros(draws)
-    for Nc, g, n, s in cells:
-        p = rng.beta(s + a, n - s + a, draws)
-        k = s + rng.binomial(Nc - n, p)
-        if g:
-            K1 += k
-        else:
-            K0 += k
-    den = N - K1 - K0
-    return np.where(den > 0, (H - K1) / np.where(den > 0, den, 1), np.nan)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # -I는 스크립트 폴더를 import 경로에서 빼므로 직접 넣는다
+from script_only_est import draw, summary
 
 
-def summarize(R):
-    ok = R[~np.isnan(R)]
-    if len(ok) == 0:
-        return "정의 안 됨(분모 0)"
-    lo, md, hi = np.percentile(ok, [2.5, 50, 97.5])
-    return f"중앙 {md:.3f}, 95% {lo:.3f}~{hi:.3f}" + (f", 분모 0 {np.isnan(R).mean():.1%}" if np.isnan(R).any() else "")
+def polya(cells, H, N, draws=10_000, seed=0):
+    return draw(cells, H, N, a=0.5, draws=draws, seed=seed)[0]
 
 
 def old_boot(strata, H, N, B, rng):
-    """현재 script_only_est.py와 같은 방식. strata: [(C_h, s array, sh array)]"""
+    """11-09까지 script_only_est.py가 쓰던 층화 bootstrap. strata: [(C_h, s array, sh array)]"""
     out = np.empty(B)
     for b in range(B):
         S = Sh = 0.0
@@ -45,7 +31,6 @@ def old_boot(strata, H, N, B, rng):
 
 
 if __name__ == "__main__":
-    import sys
     sys.stdout.reconfigure(encoding="utf-8")
     print("== 리뷰 가상 사례 (cells = (후보 수, 걸림, 표본, script_only))")
     cases = {
@@ -55,7 +40,7 @@ if __name__ == "__main__":
         "(d) 모든 악성이 script_only":         ([(3, True, 3, 3)], 3, 3),
     }
     for k, (cells, H, N) in cases.items():
-        print(f"{k}: {summarize(polya(cells, H, N))}")
+        print(f"{k}: {summary(polya(cells, H, N))}")
     print("   (c) 참값: (15−1)/(30−2) = 0.500")
 
     print("\n== coverage: dev 구조 가상 모집단(후보 칸 크기·H·N은 dev 값), 설계대로 층화 표본 → 95% 구간이 참값을 포함하는 비율")
@@ -90,4 +75,4 @@ if __name__ == "__main__":
                 lo, hi = np.percentile(R, [2.5, 97.5]); cov_p += lo <= truth <= hi; wid_p.append(hi - lo)
                 Rb = old_boot(strata_old, H, N, 500, rng)
                 lo, hi = np.nanpercentile(Rb, [2.5, 97.5]); cov_b += lo <= truth <= hi; wid_b.append(hi - lo); neg_b += lo < 0
-            print(f"{sname:28s} n={n:3d}  새 방식 {cov_p / REPS:.1%} (폭 {np.mean(wid_p):.3f})   현재 bootstrap {cov_b / REPS:.1%} (폭 {np.mean(wid_b):.3f})")
+            print(f"{sname:28s} n={n:3d}  새 방식 {cov_p / REPS:.1%} (폭 {np.mean(wid_p):.3f})   예전 bootstrap {cov_b / REPS:.1%} (폭 {np.mean(wid_b):.3f})")

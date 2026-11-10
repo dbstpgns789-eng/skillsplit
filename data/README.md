@@ -44,7 +44,7 @@ python sample.py          # 공부용에서 100개 뽑기 → dev100/ 폴더 + d
 | `s1_rule_report.py` | 정적 탐지기를 dev 전체에 돌려 규칙별 정상 적중률·출처 수·최다 출처 비중과 전체 수치를 냄(E5 v0, E6 v1). 원문 출력 없음 |
 | `script_only.py` | script-only 판정 1단계: 악성마다 동봉 코드에서 공격 동작 근거를 `파일:줄:동작`으로 남김(E6 §8). 패키지 압축(`<SRC>_packages.tar.gz`)과 `package_manifest.csv` 필요, 압축은 풀지 않음 |
 | `s1_eval.py` | 정적 결과 집계(dev·test 공용): 파일 수·sha256·누락·중복 확인, 재현율·오탐률 분자/분모, 출처별, script-only 제외 |
-| `script_only_sample.py`, `script_only_est.py`, `script_only_view.py` | script-only 층화 표본·판정 시트 만들기, 제외 재현율 추정(정적·LLM·Jev 공용), 판정자 터미널 전용 원문 보기(`docs/script_only_proposal.md`) |
-| `script_only_ci_trial.py` | **시험용, 미확정.** script-only 제외 재현율 95% 구간 계산 방법 비교(PR #9 리뷰 2번, 세훈 님 검토용). 가상 사례와 coverage만 출력하며 test 순서에는 쓰지 않음 |
+| `script_only_sample.py`, `script_only_est.py`, `script_only_view.py` | script-only 층화 표본·판정 시트 만들기, 제외 재현율 추정(정적·LLM·Jev 공용, 유한모집단 베이즈: 중앙값과 95% 베이즈 구간, 후보 목록을 함께 받음), 판정자 터미널 전용 원문 보기(`docs/script_only_proposal.md`) |
+| `script_only_ci_trial.py` | script-only 제외 재현율 구간 계산 방법 비교 기록(PR #9 리뷰 2번, 11-10에 유한모집단 베이즈로 정함). 가상 사례와 예전 bootstrap과의 coverage만 출력하며 test 순서에는 쓰지 않음 |
 | `run_template.py`, `case_excerpt.py` | RUN 규칙 반복 틀 세기(E6 §3), 사례 판정용 가린 발췌(E6 §5). 원문 출력 없음 |
 | `make_test.py`, `count_cisco.py` | 대표가 Cisco 기준선 돌릴 때 쓰는 것. 팀원은 안 써도 됨 |

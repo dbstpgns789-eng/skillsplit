@@ -61,7 +61,9 @@ python -c "import pandas as p; p.read_csv('test_labels.csv').merge(p.read_csv('s
 python -I script_only.py <test 정답 csv> <test script_evidence csv>                    # 1. 코드 파일 유무·자동 근거
 python -I script_only_sample.py <test script_evidence csv> 100 <test 시트 csv>          # 2. 표본 100개(seed 0), 판정 시트
 #   3. 판정자(왕민)가 탐지기 결과를 보지 않고 시트의 verdict 등을 채운다(script_only_view.py)
-python -I script_only_est.py <test 시트 csv> <test 정답 csv> ../runs/stage1_v1_test.jsonl --threshold 0   # 4. 추정
+python -I script_only_est.py <test 시트 csv> <test script_evidence csv> <test 정답 csv> ../runs/stage1_v1_test.jsonl --threshold 0   # 4. 추정
+#   출력: 전체 재현율(기본), script-only 제외 재현율(보조)의 중앙값과 95% 베이즈 구간을 a=0.5(주)·a=1(함께 보고) 두 줄로
+cd .. && python -m pytest tests/test_script_only_est.py                       # 추정기 가상 사례 확인(14 passed)
 ```
 
 - `s1_eval.py` 출력: 파일 수·해시·누락·중복·생략 건수, 전체와 출처별 "악성 걸림/악성", "정상 걸림/정상".
@@ -96,7 +98,7 @@ PR-AUC(보조, 같은 데이터끼리만 비교. E6 §0·§2):
 
 누락 0, 중복 0, 실패 0, 입력 생략(앞 300,000자만 검사) 1개(dev 전체), dev100 0.
 
-script-only 제외 재현율은 아직 내지 않는다. 기준은 11-07에 정했고(E6 §8.2, [script_only_proposal](script_only_proposal.md)), dev 파일럿 30개(`docs/experiments/script_only_dev_sheet.csv`)는 동결 뒤 test 판정 전에 판정한다(기준 문구는 바꾸지 않음). 판정이 끝나면 `script_only_est.py`로 낸 참고값을 적는다. E6 §8.3의 90개는 미탐에서만 뽑아 추정에 쓰지 않는다.
+script-only 제외 재현율은 아직 내지 않는다. 기준은 11-07에 정했고(E6 §8.2, [script_only_proposal](script_only_proposal.md)), dev 파일럿 30개(`docs/experiments/script_only_dev_sheet.csv`)는 동결 뒤 test 판정 전에 판정한다(기준 문구는 바꾸지 않음). 판정이 끝나면 `script_only_est.py`로 낸 참고값(중앙값, 95% 베이즈 구간, a=0.5·a=1)을 적는다. E6 §8.3의 90개는 미탐에서만 뽑아 추정에 쓰지 않는다.
 
 결과 파일(원문 없음):
 - `results/stage1/stage1_v1_dev.jsonl`, `stage1_v1_dev100.jsonl`과 각 `.details.jsonl`: 공통 형식
