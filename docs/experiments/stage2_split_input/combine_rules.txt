@@ -1,0 +1,5 @@
+통째만 (B)            dev100 악성 27/50 오탐 0/50 | 합성 clean 0/5 explicit 5/5 split_camo 0/5 same_para 0/5
+조각만 (P 최고)         dev100 악성 30/50 오탐 1/50 | 합성 clean 2/5 explicit 5/5 split_camo 2/5 same_para 2/5
+평균 (B+P)/2         dev100 악성 27/50 오탐 0/50 | 합성 clean 0/5 explicit 5/5 split_camo 0/5 same_para 0/5
+통째 or 조각≥0.9       dev100 악성 27/50 오탐 0/50 | 합성 clean 0/5 explicit 5/5 split_camo 0/5 same_para 0/5
+통째 or 조각≥0.7       dev100 악성 28/50 오탐 0/50 | 합성 clean 0/5 explicit 5/5 split_camo 0/5 same_para 0/5
