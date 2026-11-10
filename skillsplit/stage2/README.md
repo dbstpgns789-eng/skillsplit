@@ -59,7 +59,7 @@ Jev가 들어가는 지표 (모든 숫자에 데이터 이름·모델·버전을
 
 **주의.**
 - Jev는 내부 구조가 공개되지 않아 왜 그렇게 판정했는지 알 수 없다. 사례 분석의 "이유"는 LLM 버전의 근거와 Jev의 `attack_vector` 답으로 대신한다.
-- 입력에 `benchmark_id`, 출처를 넣지 않는다(라벨 누출 방지). Jev 입력 한도 32k 토큰은 공통 자르기 규칙으로 지킨다.
+- 입력에 `benchmark_id`, 출처를 넣지 않는다(라벨 누출 방지). Jev 입력 한도(32k 토큰)를 자르기 v1 뒤에도 넘으면 4xx로 실패해 점수 2/3이 된다(decisions 2026-11-07).
 - jev-skillbench의 네 번째 질문(behavior)은 점수에 쓰이지 않아 v0에서 뺐다.
 - Jev도 같은 요청에 점수가 조금씩 다르다. jev-skillbench에서 같은 표본을 두 번 돌리니 963개 중 64%만 점수가 같았고, 5~6개는 0.5를 넘나들었다. 그래서 3번 돌린다(아래 "3회 반복").
 - `typesafe-ai/jev`는 별칭이라 버전이 바뀔 수 있다. Vercel 경유 응답에는 정확한 버전이 오지 않으므로(details에 `typesafe-ai/jev`로만 남음) 실행 날짜를 함께 기록한다.
@@ -98,7 +98,7 @@ python -m skillsplit.stage2.jev_judge data/dev100 --out runs/stage2_jev_v0_dev10
 
 중간에 끊겨도 같은 `--out`으로 다시 돌리면 이미 끝난 스킬은 건너뛴다.
 
-판정 실패 처리 (LLM·Jev 같은 규칙): 끝까지 판정하지 못한 스킬은 점수 2/3으로 결과 파일에 쓰고("걸림"), details에 실패를 표시한다. LLM은 `parse_error`·`refused`·`cut_off`, Jev는 `failed`·`error`. Jev는 일시적 오류(429, 5xx, 연결·시간 초과)를 5·15·45초 기다리며 3번까지 다시 보내고, 4xx나 답 모양이 다른 경우는 바로 실패로 친다. 실패한 스킬도 결과 줄이 있으므로 다시 돌려도 건너뛴다. 다시 판정하려면 그 줄을 결과 파일과 details에서 지운다. 보고할 때는 실패 건수를 따로 적고, 실패한 스킬은 원래 답(`raw_if_failed`, `error`)을 직접 확인한다.
+판정 실패 처리 (LLM·Jev 같은 규칙): 끝까지 판정하지 못한 스킬은 점수 2/3으로 결과 파일에 쓰고("걸림"), details에 실패를 표시한다. LLM은 `parse_error`·`refused`, Jev는 `failed`·`error`. LLM의 `cut_off`(답이 512토큰에서 끊김)는 실패 표시가 아니라 원인 기록이다. 끊겨도 판정을 읽을 수 있으면 그 판정을 쓰고, 읽지 못하면 `parse_error`가 함께 남는다. Jev는 일시적 오류(429, 5xx, 연결·시간 초과)를 5·15·45초 기다리며 3번까지 다시 보내고, 4xx나 답 모양이 다른 경우는 바로 실패로 친다. 실패한 스킬도 결과 줄이 있으므로 다시 돌려도 건너뛴다. 다시 판정하려면 그 줄을 결과 파일과 details에서 지운다. 보고할 때는 실패 건수를 따로 적고, 실패한 스킬은 원래 답(`raw_if_failed`, `error`)을 직접 확인한다.
 
 3회 결과를 모아 성능·흔들림·비용·정적과의 네 칸을 보려면(정적 결과 파일은 1단계 `scan`으로 만든다):
 
@@ -108,6 +108,8 @@ python -m skillsplit.stage2.summarize_runs data/devcheck100_labels.csv runs/stag
 ```
 
 있는 회차만 읽고(1회도 됨), 걸림 기준 0.5와 2/3을 나란히, 출처별 숫자도 함께 낸다.
+
+동결 자료와 test 집계에는 `report_thresholds`를 쓴다(문턱 후보별·출처별 분자/분모, 실패 장부, 네 칸, 결합, 비용). Jev 실패 기록에는 토큰 수가 없어 비용 줄에서 합계에 넣지 않고 "사용량 모름" 건수로 따로 낸다(`tests/test_report_thresholds.py`). 실행 전 데이터 확인은 `check_dataset`. 명령은 `docs/stage2-freeze.md` §2.
 
 ### 3회 반복
 
@@ -133,15 +135,15 @@ done
 | 자르기 | 12,000자 초과 시 머리 8,000 + 꼬리 4,000 | `docs/research/R2_llm_judge.md` C1, SkillGate 코드 |
 | 프롬프트 | SkillGate 시스템 프롬프트를 SKILL.md 단독 입력에 맞게 고침 + 기능-행동 일치 질문 + 결함은 악성 아님 + 근거 인용 | R2 A1, C2, C3 |
 | 프롬프트 v2 (2026-10-26, 현재 기본) | v0 + 무관한 강제 실행에 숨김·확인 생략 지시가 붙으면 내용이 안 보여도 MALICIOUS(두 문장을 인용할 수 있을 때만) + 가짜 권위·수정 금지 신호 + `[REDACTED…]`·자르기 표시는 신호 아님 + 근거는 글자 그대로 | dev100 회색 지대 20개 읽기, `docs/stage2-log.md` 10-26. v1은 폐기 |
+| 자르기 v1 (2026-11-04, 현재) | 60,000자 초과 시 머리 40,000 + 꼬리 20,000 | v0(12,000자)는 dev의 14%를 자르고, 잘린 가운데에 심은 공격을 Jev가 5개 모두 놓침(자르기 없으면 5개 모두 잡음, 정상 오탐 0). 상한은 21MB 이상치와 Jev 입력 한도 때문. `docs/stage2-log.md` 11-04 |
 | 인젝션 방어 | `<<<SKILL_MD_BEGIN>>>` 구분자, 안의 지시 무시, 판정 조작 시도는 악성 신호 | R2 A5, C7 조건 A (Spotlighting delimiting) |
 | 모델 | `claude-haiku-4-5`(Vercel 이름 `anthropic/claude-haiku-4.5`), temperature 0 | R2 C4, C5. 경로는 Vercel (2026-10-24, Anthropic 키 없음) |
 | 파싱 실패·거부 | 점수 2/3(`FAIL_SCORE`, 문턱 후보 0.5와 2/3 모두에서 걸림), details에 `parse_error`·`refused`로 표시. 답이 512토큰에서 끊긴 경우는 `cut_off`로 따로 표시 | R2 C3, 리뷰(세훈). 2026-10-27 전에는 SUSPICIOUS 0.4 → 점수 0.467이라 문턱 0.5 아래, 즉 안전으로 처리됐음 |
+| 걸림 기준 (2026-11-07, 동결) | LLM score ≥ 2/3(0.5 숫자를 함께 보고), Jev score ≥ 0.5 | dev 전체 1회, `docs/stage2-freeze.md` §4 |
 | 근거 검사 | 원문에 없는 인용은 버리고 개수를 기록 | R2 C3 |
 | 입력에서 뺀 것 | `benchmark_id`, `source_id`, 스킬 폴더 이름 | 라벨 누출 방지 (R2 C1-5) |
 | Jev 질문 | jev-skillbench의 is_malicious, attack_vector, harm_severity | 기존 결과를 다른 데이터에서 재현 |
 
 ## 아직 안 한 것
 
-- 프롬프트 v2를 dev100 3회로 기록, 문턱과 실패 점수 결정(실패 0.467이 문턱 아래인 문제), dev 전체 1회(동결 직전)
 - 결과 캐시(SQLite, R2 C6), 3회 반복 실행과 흔들림 집계, Spotlighting B 조건 (2주차 이후)
-- 점수 문턱 θ와 거부 처리 규칙 확정 (4주차)
